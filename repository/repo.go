@@ -9,7 +9,7 @@ type AccessTokenRepositoryInterface interface {
 
 // to store ciba session
 type CibaSessionRepositoryInterface interface {
-	create(cibaSession domain.CibaSession)
+	create(cibaSession domain.CibaSessionInterface)
 }
 
 // to store client application

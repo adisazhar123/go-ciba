@@ -1,8 +1,7 @@
 package domain
 
 import (
-	"crypto/rand"
-	b64 "encoding/base64"
+	"github.com/adisazhar123/ciba-server/util"
 )
 
 type CibaSession struct {
@@ -20,12 +19,5 @@ func NewCibaSession(expiresIn int, interval int) *CibaSession {
 }
 
 func generateAuthReqId() string {
-	key := make([]byte, 64)
-
-	_, err := rand.Read(key)
-	if err != nil {
-		panic("error generating authentication request id")
-	}
-
-	return b64.RawURLEncoding.EncodeToString(key)
+	return util.GenerateRandomString()
 }
