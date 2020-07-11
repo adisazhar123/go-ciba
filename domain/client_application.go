@@ -20,7 +20,13 @@ type ClientApplication struct {
 	TokenMode                       string
 	ClientNotificationEndpoint      string
 	AuthenticationRequestSigningAlg string
-	UserCodeParameter               bool
+	UserCodeParameterSupported      bool
+
+	redirectUri						string
+	tokenEndpointAuthMethod			string
+	tokenEndpointAuthSigningAlg		string
+	grantTypes						string
+	publicKeyUri					string
 }
 
 func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, authenticationRequestSigningAlg string, userCode bool) *ClientApplication {
@@ -32,7 +38,7 @@ func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, au
 		TokenMode:                       tokenMode,
 		ClientNotificationEndpoint:      clientNotificationEndpoint,
 		AuthenticationRequestSigningAlg: authenticationRequestSigningAlg,
-		UserCodeParameter:               userCode,
+		UserCodeParameterSupported:      userCode,
 	}
 }
 
@@ -89,9 +95,9 @@ func (ca *ClientApplication) SetTokenMode(mode string) {
 }
 
 func (ca *ClientApplication) SetUserCodeSupported(supported bool) {
-	ca.UserCodeParameter = supported
+	ca.UserCodeParameterSupported = supported
 }
 
 func (ca *ClientApplication) IsUserCodeSupported() bool {
-	return ca.UserCodeParameter
+	return ca.UserCodeParameterSupported
 }

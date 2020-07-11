@@ -21,14 +21,24 @@ type AccessTokenInterface interface {
 }
 
 type UserAccountInterface interface {
+	GetId() string
+	SetId(id string)
+	SetName(name string)
+	GetName() string
+	SetEmail(email string)
+	GetEmail() string
+	SetPassword(password string)
+	GetPassword() string
 	GetUseCode() string
-	SetUserCode(code string) string
+	SetUserCode(code string)
 }
 
 type CibaSessionInterface interface {
 	GetClient() ClientApplication
-	GetUser() UserAccountInterface
+	GetUser() UserAccount
 }
+
+
 
 type Scope struct {
 

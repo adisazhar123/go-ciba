@@ -13,5 +13,5 @@ func TestNewClientApplication(t *testing.T) {
 	assert.Equal(t, "ping", ca.TokenMode)
 	assert.Equal(t, "https://ca-demo.dev/notif", ca.ClientNotificationEndpoint)
 	assert.Equal(t, "RS256", ca.AuthenticationRequestSigningAlg)
-	assert.Equal(t, false, ca.UserCodeParameter)
+	assert.Equal(t, false, ca.UserCodeParameterSupported)
 }
