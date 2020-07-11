@@ -22,3 +22,7 @@ func (as *AuthorizationServer) AddGrant(gt grant.GrantTypeInterface) {
 		log.Printf("added grant type: %s\n", gt.GetIdentifier())
 	}
 }
+
+func (as *AuthorizationServer) HandleAuthenticationRequest(request AuthenticationRequest) {
+
+}

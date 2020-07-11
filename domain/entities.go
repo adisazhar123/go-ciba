@@ -11,6 +11,8 @@ type ClientApplicationInterface interface {
 	SetScope(scope string)
 	GetTokenMode() string
 	SetTokenMode(mode string)
+	SetUserCodeSupported(supported bool)
+	IsUserCodeSupported() bool
 }
 
 type AccessTokenInterface interface {
@@ -19,9 +21,9 @@ type AccessTokenInterface interface {
 }
 
 type UserAccountInterface interface {
-
+	GetUseCode() string
+	SetUserCode(code string) string
 }
-
 
 type CibaSessionInterface interface {
 	GetClient() ClientApplication

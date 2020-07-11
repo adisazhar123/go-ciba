@@ -9,6 +9,6 @@ type ClientApplicationSQLRepository struct {
 	db sqlx.DB
 }
 
-func (repo *ClientApplicationSQLRepository) register(clientApp domain.ClientApplicationInterface) {
+func (repo *ClientApplicationSQLRepository) Register(clientApp domain.ClientApplicationInterface) {
 	
 }
