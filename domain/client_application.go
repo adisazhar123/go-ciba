@@ -46,6 +46,14 @@ func (ca *ClientApplication) MarshalBinary() ([]byte, error) {
 	return json.Marshal(ca)
 }
 
+func (ca *ClientApplication) GetGrantTypes() string {
+	return ca.grantTypes
+}
+
+func (ca *ClientApplication) GetTokenEndpointAuthMethod() string {
+	return ca.tokenEndpointAuthMethod
+}
+
 func (ca *ClientApplication) UnmarshalBinary(data []byte) error {
 	if err := json.Unmarshal(data, &data); err != nil {
 		return err

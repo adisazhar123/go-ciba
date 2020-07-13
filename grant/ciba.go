@@ -3,7 +3,7 @@ package grant
 import "github.com/adisazhar123/ciba-server/domain"
 
 const (
-	IDENTIFIER_CIBA = "urn:openid:params:grant-type:ciba"
+	IdentifierCiba = "urn:openid:params:grant-type:ciba"
 )
 
 type CibaGrantTypeInterface interface {
@@ -28,7 +28,7 @@ func NewCibaGrant() *CibaGrant {
 }
 
 func (cg *CibaGrant) GetIdentifier() string {
-	return IDENTIFIER_CIBA
+	return IdentifierCiba
 }
 
 func (cg *CibaGrant) ValidateAuthenticationRequest() {

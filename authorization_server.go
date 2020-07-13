@@ -26,7 +26,7 @@ func (as *AuthorizationServer) AddGrant(gt grant.GrantTypeInterface) {
 }
 
 func (as *AuthorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) {
-	if err := as.grants[grant.IDENTIFIER_CIBA].ValidateAuthenticationRequest(request); err != nil {
+	if err := as.grants[grant.IdentifierCiba].ValidateAuthenticationRequest(request); err != nil {
 		panic(err)
 	}
 }
