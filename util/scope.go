@@ -1,35 +1,31 @@
 package util
 
 import (
-	"github.com/adisazhar123/ciba-server/domain"
 	"strings"
 )
 
 type ScopeUtil struct {
-
 }
 
-func find(slice []string, val string) bool {
-	for _, item := range slice {
-		if item == val {
-			return true
-		}
-	}
-	return false
-}
-
-func (ss *ScopeUtil) ScopeExist(clientApp *domain.ClientApplication, scope string) bool {
-	registeredScope := strings.Split(clientApp.Scope, " ")
+func (ss *ScopeUtil) ScopeExist(clientAppScope string, scope string) bool {
+	registeredScope := strings.Split(clientAppScope, " ")
 	requestedScope := strings.Split(scope, " ")
 
 	if len(registeredScope) < len(requestedScope) {
 		return false
 	}
 
+	mapRegistered := make(map[string]struct{})
+
+	for _, v := range registeredScope {
+		mapRegistered[v] = struct{}{}
+	}
+
 	for _, v := range requestedScope {
-		if find(registeredScope, v) {
-			return true
+		if _, exist := mapRegistered[v]; !exist {
+			return false
 		}
 	}
-	return false
+
+	return true
 }

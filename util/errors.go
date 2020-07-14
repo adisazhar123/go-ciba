@@ -3,21 +3,21 @@ package util
 import "net/http"
 
 const (
-	errAuthorizationPending = "authorization_pending"
-	errSlowDown = "slow_down"
-	errExpiredToken = "expired_token"
-	errAccessDenied = "access_denied"
-	errUnauthorizedClient = "unauthorized_client"
-	errInvalidRequest = "invalid_request"
-	errInvalidGrant = "invalid_grant"
-	errTransactionFailed = "transaction_failed"
-	errInvalidScope = "invalid_scope"
+	errAuthorizationPending  = "authorization_pending"
+	errSlowDown              = "slow_down"
+	errExpiredToken          = "expired_token"
+	errAccessDenied          = "access_denied"
+	errUnauthorizedClient    = "unauthorized_client"
+	errInvalidRequest        = "invalid_request"
+	errInvalidGrant          = "invalid_grant"
+	errTransactionFailed     = "transaction_failed"
+	errInvalidScope          = "invalid_scope"
 	errExpiredLoginHintToken = "expired_login_hint_token"
-	errUnknownUserId = "unknown_user_id"
-	errMissingUserCode = "missing_user_code"
-	errInvalidUserCode = "invalid_user_code"
+	errUnknownUserId         = "unknown_user_id"
+	errMissingUserCode       = "missing_user_code"
+	errInvalidUserCode       = "invalid_user_code"
 	errInvalidBindingMessage = "invalid_binding_message"
-	errInvalidClient = "invalid_client"
+	errInvalidClient         = "invalid_client"
 )
 
 var (
@@ -99,8 +99,8 @@ var (
 )
 
 type OidcError struct {
-	Error string `json:"error"`
+	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
-	ErrorUri string `json:"error_uri,omitempty"`
-	Code int `json:"status_code,omitempty"`
+	ErrorUri         string `json:"error_uri,omitempty"`
+	Code             int    `json:"status_code,omitempty"`
 }

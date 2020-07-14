@@ -8,11 +8,7 @@ import (
 
 func GenerateRandomString() string {
 	key := make([]byte, 64)
-
-	_, err := rand.Read(key)
-	if err != nil {
-		panic("error generating authentication request id")
-	}
+	_, _ = rand.Read(key)
 
 	return b64.RawURLEncoding.EncodeToString(key)
 }

@@ -5,11 +5,10 @@ import (
 	"github.com/adisazhar123/ciba-server/util"
 )
 
-
 const (
-	MODE_PING = "ping"
+	ModePing  = "ping"
 	MODE_POLL = "poll"
-	MODE_PUSH = "push"
+	ModePush  = "push"
 )
 
 type ClientApplication struct {
@@ -22,11 +21,11 @@ type ClientApplication struct {
 	AuthenticationRequestSigningAlg string
 	UserCodeParameterSupported      bool
 
-	redirectUri						string
-	tokenEndpointAuthMethod			string
-	tokenEndpointAuthSigningAlg		string
-	grantTypes						string
-	publicKeyUri					string
+	redirectUri                 string
+	TokenEndpointAuthMethod     string
+	tokenEndpointAuthSigningAlg string
+	grantTypes                  string
+	publicKeyUri                string
 }
 
 func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, authenticationRequestSigningAlg string, userCode bool) *ClientApplication {
@@ -46,20 +45,24 @@ func (ca *ClientApplication) MarshalBinary() ([]byte, error) {
 	return json.Marshal(ca)
 }
 
-func (ca *ClientApplication) GetGrantTypes() string {
-	return ca.grantTypes
-}
-
-func (ca *ClientApplication) GetTokenEndpointAuthMethod() string {
-	return ca.tokenEndpointAuthMethod
-}
-
 func (ca *ClientApplication) UnmarshalBinary(data []byte) error {
 	if err := json.Unmarshal(data, &data); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (ca *ClientApplication) GetGrantTypes() string {
+	return ca.grantTypes
+}
+
+func (ca *ClientApplication) GetClientNotificationEndpoint() string {
+	return ca.ClientNotificationEndpoint
+}
+
+func (ca *ClientApplication) GetTokenEndpointAuthMethod() string {
+	return ca.TokenEndpointAuthMethod
 }
 
 func (ca *ClientApplication) GetId() string {
@@ -107,5 +110,13 @@ func (ca *ClientApplication) SetUserCodeSupported(supported bool) {
 }
 
 func (ca *ClientApplication) IsUserCodeSupported() bool {
+	return ca.UserCodeParameterSupported
+}
+
+func (ca *ClientApplication) GetAuthenticationRequestSigningAlg() string {
+	return ca.AuthenticationRequestSigningAlg
+}
+
+func (ca *ClientApplication) GetUserCodeParameterSupported() bool {
 	return ca.UserCodeParameterSupported
 }

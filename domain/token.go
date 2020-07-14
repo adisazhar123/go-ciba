@@ -1,7 +1,7 @@
 package domain
 
 type AccessToken struct {
-	value string
+	value     string
 	tokenType string
 	expiresIn string
 }

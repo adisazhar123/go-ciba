@@ -12,17 +12,13 @@ type HttpBasic struct {
 }
 
 type HttpClientCredentials struct {
-	clientId string
+	clientId     string
 	clientSecret string
 }
 
 func (hb *HttpBasic) ValidateRequest(r *http.Request, ca *domain.ClientApplication) bool {
 	clientCred := hb.getClientCredentials(r)
 	return clientCred != nil && ca.GetId() == clientCred.clientId && ca.GetSecret() == clientCred.clientSecret
-}
-
-func (hb *HttpBasic) GetClientCredentials() *HttpClientCredentials {
-	return hb.clientCredentials
 }
 
 func (hb *HttpBasic) getClientCredentials(r *http.Request) *HttpClientCredentials {

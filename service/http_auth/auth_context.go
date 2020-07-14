@@ -3,6 +3,7 @@ package http_auth
 import (
 	"fmt"
 	"github.com/adisazhar123/ciba-server/domain"
+	"log"
 	"net/http"
 )
 
@@ -13,17 +14,18 @@ type ClientAuthenticationContext struct {
 const ClientSecretBasic = "client_secret_basic"
 const ClientSecretPost = "client_secret_post"
 
-
 func (c *ClientAuthenticationContext) AuthenticateClient(r *http.Request, ca *domain.ClientApplication) bool {
 	// TODO: Add more client authentication methods
 	switch ca.GetTokenEndpointAuthMethod() {
 	case ClientSecretBasic:
 		c.strategy = &HttpBasic{clientCredentials: &HttpClientCredentials{}}
 	case ClientSecretPost:
-		panic(fmt.Sprintf("ciba server doesn't support %s authentication method", ClientSecretPost))
+		log.Println(fmt.Sprintf("ciba server doesn't support %s authentication method", ClientSecretPost))
+		return false
 	default:
-		panic(fmt.Sprintf("ciba server doesn't support %s authentication method", ca.GetTokenEndpointAuthMethod()))
+		log.Println(fmt.Sprintf("ciba server doesn't support %s authentication method", ca.GetTokenEndpointAuthMethod()))
+		return false
 	}
 
-	return c.AuthenticateClient(r, ca)
+	return c.strategy.ValidateRequest(r, ca)
 }

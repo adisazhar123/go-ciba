@@ -13,18 +13,19 @@ import (
 )
 
 type AuthenticationRequest struct {
-	ClientId string
+	ClientId     string
 	ClientSecret string
 
-	AcrValues string
-	BindingMessage string
+	AcrValues               string
+	BindingMessage          string
 	ClientNotificationToken string
-	IdTokenHint string
-	LoginHint string
-	LoginHintToken string
-	RequestedExpiry int
-	Scope string
-	UserCode string
+	IdTokenHint             string
+	LoginHint               string
+	LoginHintToken          string
+	RequestedExpiry         int
+	Scope                   string
+	UserCode                string
+	Interval                int
 
 	request string // holds signed request content
 
@@ -49,16 +50,47 @@ func MakeAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	return authRequest
 }
 
+type AuthenticationResponse struct {
+	AuthReqId string `json:"auth_req_id"`
+	ExpiresIn int    `json:"expires_in"`
+	Interval  int    `json:"interval,omitempty"`
+}
+
+func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn, interval int) *AuthenticationResponse {
+	return &AuthenticationResponse{
+		AuthReqId: authReqId,
+		ExpiresIn: expiresIn,
+		Interval:  interval,
+	}
+}
+
 type CibaServiceInterface interface {
-	ValidateAuthenticationRequestParameters(request *AuthenticationRequest) (interface{}, error)
-	HandleAuthenticationRequest(request *AuthenticationRequest) (interface{}, error)
+	GrantServiceInterface
 }
 
 type CibaService struct {
-	clientAppRepo repository.ClientApplicationRepositoryInterface
+	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	userAccountRepo repository.UserAccountRepositoryInterface
-	scopeUtil util.ScopeUtil
+	cibaSessionRepo repository.CibaSessionRepositoryInterface
+
+	scopeUtil             util.ScopeUtil
 	authenticationContext http_auth.ClientAuthenticationStrategyInterface
+
+	clientApp *domain.ClientApplication
+	grant     grant.GrantTypeInterface
+}
+
+func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{}, error) {
+	validation, err := cs.ValidateAuthenticationRequestParameters(request)
+	if err != nil {
+		return validation, err
+	}
+	//hint, bindingMessage, clientNotificationToken, scope string, expiresIn, interval int
+	// Create new ciba session
+	ciba := domain.NewCibaSession(request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, request.Interval)
+	cs.cibaSessionRepo.Create(ciba)
+
+	return makeSuccessfulAuthenticationResponse(ciba.AuthReqId, ciba.ExpiresIn, ciba.Interval), nil
 }
 
 func (cs *CibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) (interface{}, error) {
@@ -107,12 +139,12 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Make sure scope is valid for chosen client
-	if !cs.scopeUtil.ScopeExist(clientApp, request.Scope) {
+	if !cs.scopeUtil.ScopeExist(clientApp.GetScope(), request.Scope) {
 		return util.ErrInvalidScope, errors.New(util.ErrInvalidScope.ErrorDescription)
 	}
 
 	// Client registered using ping or push must provide client_notification_token
-	if clientApp.GetTokenMode() == domain.MODE_PING || clientApp.GetTokenMode() == domain.MODE_PUSH && request.ClientNotificationToken == "" {
+	if clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush && request.ClientNotificationToken == "" {
 		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
 	}
 
@@ -132,4 +164,8 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	return true, nil
+}
+
+func (cs *CibaService) GetGrantIdentifier() string {
+	return cs.grant.GetIdentifier()
 }

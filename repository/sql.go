@@ -10,5 +10,5 @@ type ClientApplicationSQLRepository struct {
 }
 
 func (repo *ClientApplicationSQLRepository) Register(clientApp domain.ClientApplicationInterface) {
-	
+
 }

@@ -38,8 +38,5 @@ type CibaSessionInterface interface {
 	GetUser() UserAccount
 }
 
-
-
 type Scope struct {
-
 }

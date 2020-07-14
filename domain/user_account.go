@@ -6,11 +6,11 @@ import (
 )
 
 type UserAccount struct {
-	id string
-	name     string
-	email    string
-	password string
-	userCode string
+	id        string
+	name      string
+	email     string
+	password  string
+	userCode  string
 	createdAt time.Time
 	updatedAt time.Time
 }
@@ -66,4 +66,3 @@ func (ua *UserAccount) SetPassword(password string) {
 func (ua *UserAccount) GetPassword() string {
 	return ua.password
 }
-
