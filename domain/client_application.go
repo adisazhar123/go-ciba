@@ -21,11 +21,11 @@ type ClientApplication struct {
 	AuthenticationRequestSigningAlg string
 	UserCodeParameterSupported      bool
 
-	redirectUri                 string
+	RedirectUri                 string
 	TokenEndpointAuthMethod     string
-	tokenEndpointAuthSigningAlg string
-	grantTypes                  string
-	publicKeyUri                string
+	TokenEndpointAuthSigningAlg string
+	GrantTypes                  string
+	PublicKeyUri                string
 }
 
 func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, authenticationRequestSigningAlg string, userCode bool) *ClientApplication {
@@ -46,7 +46,7 @@ func (ca *ClientApplication) MarshalBinary() ([]byte, error) {
 }
 
 func (ca *ClientApplication) UnmarshalBinary(data []byte) error {
-	if err := json.Unmarshal(data, &data); err != nil {
+	if err := json.Unmarshal(data, ca); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ func (ca *ClientApplication) UnmarshalBinary(data []byte) error {
 }
 
 func (ca *ClientApplication) GetGrantTypes() string {
-	return ca.grantTypes
+	return ca.GrantTypes
 }
 
 func (ca *ClientApplication) GetClientNotificationEndpoint() string {

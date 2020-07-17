@@ -14,12 +14,12 @@ func TestHttpBasic_ValidateRequest_CorrectClientCredentials(t *testing.T) {
 	uri := "ciba.example.com/bc-authorize"
 
 	clientApp := &domain.ClientApplication{
-		Id: "123456",
+		Id:     "123456",
 		Secret: "secret",
 	}
 	auth := base64.StdEncoding.EncodeToString([]byte(clientApp.Id + ":" + clientApp.Secret))
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	res := httpBasic.ValidateRequest(req, clientApp)
 
@@ -32,12 +32,12 @@ func TestHttpBasic_ValidateRequest_IncorrectClientCredentials(t *testing.T) {
 	uri := "ciba.example.com/bc-authorize"
 
 	clientApp := &domain.ClientApplication{
-		Id: "123456",
+		Id:     "123456",
 		Secret: "secret",
 	}
 	auth := base64.StdEncoding.EncodeToString([]byte(clientApp.Id + ":" + clientApp.Secret + "extra-password"))
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	res := httpBasic.ValidateRequest(req, clientApp)
 
@@ -53,12 +53,12 @@ func TestHttpBasic_GetClientCredentials_Valid(t *testing.T) {
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword))
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	credentials := httpBasic.getClientCredentials(req)
 
-	assert.Equal(t, clientId, credentials.clientId)
-	assert.Equal(t, clientPassword, credentials.clientSecret)
+	assert.Equal(t, clientId, credentials.ClientId)
+	assert.Equal(t, clientPassword, credentials.ClientSecret)
 }
 
 func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed(t *testing.T) {
@@ -70,7 +70,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed(t *t
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + clientPassword))
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	credentials := httpBasic.getClientCredentials(req)
 
@@ -86,7 +86,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed2(t *
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword + ":" + "extra"))
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	credentials := httpBasic.getClientCredentials(req)
 
@@ -118,7 +118,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectEncoding(t *t
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword))
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth + "make-it-incorrect")
+	req.Header.Add("Authorization", "Basic "+auth+"make-it-incorrect")
 
 	credentials := httpBasic.getClientCredentials(req)
 

@@ -5,6 +5,7 @@ import (
 	"github.com/alicebob/miniredis"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func newTestRedis() *miniredis.Miniredis {
@@ -55,4 +56,48 @@ func TestCibaSessionRedisRepository_Create(t *testing.T) {
 	assert.Equal(t, newCibaSession.Scope, scope)
 	assert.Equal(t, newCibaSession.ExpiresIn, expiresIn)
 	assert.Equal(t, newCibaSession.Interval, interval)
+}
+
+func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewUserAccountRedisRepository(redis.Addr())
+	userId := "23246440-92d9-4738-8faf-551d24a1c4a4"
+	user := &domain.UserAccount{
+		Id:        "23246440-92d9-4738-8faf-551d24a1c4a4",
+		Name:      "User Account 01",
+		Email:     "ua@email.com",
+		Password:  "secret",
+		UserCode:  "123",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	jsonString, _ := user.MarshalBinary()
+	redis.Set("user_account:"+userId, string(jsonString))
+
+	foundUser, err := repo.FindById(userId)
+
+	assert.Empty(t, err)
+	assert.Equal(t, user.Id, foundUser.Id)
+}
+
+func TestUserAccountRedisRepository_FindById_InvalidUser(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewUserAccountRedisRepository(redis.Addr())
+	invalidUserId := "invalid"
+	user := &domain.UserAccount{
+		Id:        "23246440-92d9-4738-8faf-551d24a1c4a4",
+		Name:      "User Account 01",
+		Email:     "ua@email.com",
+		Password:  "secret",
+		UserCode:  "123",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	jsonString, _ := user.MarshalBinary()
+	redis.Set("user_account:"+user.Id, string(jsonString))
+
+	foundUser, err := repo.FindById(invalidUserId)
+
+	assert.Empty(t, foundUser)
+	assert.NotNil(t, err)
 }

@@ -6,10 +6,10 @@ import (
 )
 
 func TestNewCibaSession(t *testing.T) {
-	hint := "some-hint-user-id"
+	hint := "some-hint-user-Id"
 	bindingMessage := "bind-123"
 	token := "someToken-8943dfgdfgdfg5"
-	scope := "openid profile email"
+	scope := "openid profile Email"
 	expiresIn := 120
 	interval := 5
 	cs := NewCibaSession(hint, bindingMessage, token, scope, expiresIn, interval)

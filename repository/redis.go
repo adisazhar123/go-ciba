@@ -31,9 +31,19 @@ type UserAccountRedisRepository struct {
 	ctx    context.Context
 }
 
+func NewUserAccountRedisRepository(addr string) *UserAccountRedisRepository {
+	cli := redis.NewClient(&redis.Options{
+		Addr: addr,
+	})
+	return &UserAccountRedisRepository{
+		client: cli,
+		ctx:    context.Background(),
+	}
+}
+
 func (ua *UserAccountRedisRepository) FindById(id string) (*domain.UserAccount, error) {
 	val, err := ua.client.Get(ua.ctx, "user_account:"+id).Result()
-	if err != nil {
+	if val == "" || err != nil {
 		return nil, err
 	}
 

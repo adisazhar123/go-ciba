@@ -6,13 +6,13 @@ import (
 )
 
 type UserAccount struct {
-	id        string
-	name      string
-	email     string
-	password  string
-	userCode  string
-	createdAt time.Time
-	updatedAt time.Time
+	Id        string    `json:"Id"`
+	Name      string    `json:"Name"`
+	Email     string    `json:"Email"`
+	Password  string    `json:"Password"`
+	UserCode  string    `json:"UserCode"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	UpdatedAt time.Time `json:"UpdatedAt"`
 }
 
 func (ua *UserAccount) MarshalBinary() ([]byte, error) {
@@ -20,7 +20,7 @@ func (ua *UserAccount) MarshalBinary() ([]byte, error) {
 }
 
 func (ua *UserAccount) UnmarshalBinary(data []byte) error {
-	if err := json.Unmarshal(data, &data); err != nil {
+	if err := json.Unmarshal(data, ua); err != nil {
 		return err
 	}
 
@@ -28,41 +28,41 @@ func (ua *UserAccount) UnmarshalBinary(data []byte) error {
 }
 
 func (ua *UserAccount) GetUseCode() string {
-	return ua.userCode
+	return ua.UserCode
 }
 
 func (ua *UserAccount) SetUserCode(code string) {
-	ua.userCode = code
+	ua.UserCode = code
 }
 
 func (ua *UserAccount) GetId() string {
-	return ua.id
+	return ua.Id
 }
 
 func (ua *UserAccount) SetId(id string) {
-	ua.id = id
+	ua.Id = id
 }
 
 func (ua *UserAccount) SetName(name string) {
-	ua.name = name
+	ua.Name = name
 }
 
 func (ua *UserAccount) GetName() string {
-	return ua.name
+	return ua.Name
 }
 
 func (ua *UserAccount) SetEmail(email string) {
-	ua.email = email
+	ua.Email = email
 }
 
 func (ua *UserAccount) GetEmail() string {
-	return ua.email
+	return ua.Email
 }
 
 func (ua *UserAccount) SetPassword(password string) {
-	ua.password = password
+	ua.Password = password
 }
 
 func (ua *UserAccount) GetPassword() string {
-	return ua.password
+	return ua.Password
 }

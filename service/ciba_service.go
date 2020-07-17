@@ -7,6 +7,7 @@ import (
 	"github.com/adisazhar123/ciba-server/service/http_auth"
 	"github.com/adisazhar123/ciba-server/util"
 	"github.com/cockroachdb/errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,8 +33,9 @@ type AuthenticationRequest struct {
 	r *http.Request
 }
 
-func MakeAuthenticationRequest(r *http.Request) *AuthenticationRequest {
+func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest := &AuthenticationRequest{}
+	r.ParseForm()
 	form := r.Form
 
 	authRequest.AcrValues = form.Get("acr_values")
@@ -46,6 +48,13 @@ func MakeAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest.RequestedExpiry = expiry
 	authRequest.Scope = form.Get("scope")
 	authRequest.UserCode = form.Get("user_code")
+
+	credentials := http_auth.UtilGetClientCredentials(r)
+
+	authRequest.ClientId = credentials.ClientId
+	authRequest.ClientSecret = credentials.ClientSecret
+
+	authRequest.r = r
 
 	return authRequest
 }
@@ -74,7 +83,7 @@ type CibaService struct {
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
 
 	scopeUtil             util.ScopeUtil
-	authenticationContext http_auth.ClientAuthenticationStrategyInterface
+	authenticationContext *http_auth.ClientAuthenticationContext
 
 	clientApp *domain.ClientApplication
 	grant     grant.GrantTypeInterface
@@ -85,11 +94,14 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	if err != nil {
 		return validation, err
 	}
-	//hint, bindingMessage, clientNotificationToken, scope string, expiresIn, interval int
+
 	// Create new ciba session
 	ciba := domain.NewCibaSession(request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, request.Interval)
-	cs.cibaSessionRepo.Create(ciba)
-
+	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
+		log.Fatalln("An error occurred", err)
+		return nil, err
+	}
+	// TODO: Send via notification for push mode
 	return makeSuccessfulAuthenticationResponse(ciba.AuthReqId, ciba.ExpiresIn, ciba.Interval), nil
 }
 
@@ -100,8 +112,8 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
 	}
 
-	// Make authentication type is correct e.g. http_auth basic, client secret JWT etc.
-	clientAuth := cs.authenticationContext.ValidateRequest(request.r, clientApp)
+	// Make sure authentication type is correct e.g. http_auth basic, client secret JWT etc.
+	clientAuth := cs.authenticationContext.AuthenticateClient(request.r, clientApp)
 	if !clientAuth {
 		return util.ErrInvalidClient, errors.New(util.ErrInvalidClient.ErrorDescription)
 	}
@@ -126,6 +138,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	// Make sure only one type of hint
 	if hintCounter == 0 || hintCounter > 1 {
 		// TODO: return error login hint == 0 || hint > 1
+		log.Println("login hint failed", request)
 		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
 	}
 
@@ -144,7 +157,8 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Client registered using ping or push must provide client_notification_token
-	if clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush && request.ClientNotificationToken == "" {
+	if (request.ClientNotificationToken == "") && (clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush) {
+		log.Println("failed here notif")
 		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
 	}
 

@@ -15,13 +15,13 @@ func TestClientAuthenticationContext_AuthenticateClient_ClientSecretBasic_Suppor
 	clientPassword := "secret"
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword))
 	clientApp := &domain.ClientApplication{
-		Id: clientId,
-		Secret: clientPassword,
+		Id:                      clientId,
+		Secret:                  clientPassword,
 		TokenEndpointAuthMethod: ClientSecretBasic,
 	}
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	authContext := &ClientAuthenticationContext{}
 	res := authContext.AuthenticateClient(req, clientApp)
@@ -36,13 +36,13 @@ func TestClientAuthenticationContext_AuthenticateClient_ClientSecretPost_Unuppor
 	clientPassword := "secret"
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword))
 	clientApp := &domain.ClientApplication{
-		Id: clientId,
-		Secret: clientPassword,
+		Id:                      clientId,
+		Secret:                  clientPassword,
 		TokenEndpointAuthMethod: ClientSecretPost,
 	}
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	authContext := &ClientAuthenticationContext{}
 	res := authContext.AuthenticateClient(req, clientApp)
@@ -57,13 +57,13 @@ func TestClientAuthenticationContext_AuthenticateClient_ClientSecretJwt_Unupport
 	clientPassword := "secret"
 	auth := base64.StdEncoding.EncodeToString([]byte(clientId + ":" + clientPassword))
 	clientApp := &domain.ClientApplication{
-		Id: clientId,
-		Secret: clientPassword,
+		Id:                      clientId,
+		Secret:                  clientPassword,
 		TokenEndpointAuthMethod: "client_secret_jwt",
 	}
 
 	req, _ := http.NewRequest(method, uri, nil)
-	req.Header.Add("Authorization", "Basic " + auth)
+	req.Header.Add("Authorization", "Basic "+auth)
 
 	authContext := &ClientAuthenticationContext{}
 	res := authContext.AuthenticateClient(req, clientApp)
