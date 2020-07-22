@@ -2,13 +2,13 @@ package domain
 
 import (
 	"encoding/json"
-	"github.com/adisazhar123/ciba-server/util"
+	"github.com/adisazhar123/go-ciba/util"
 )
 
 const (
-	ModePing  = "ping"
-	MODE_POLL = "poll"
-	ModePush  = "push"
+	ModePing = "ping"
+	ModePoll = "poll"
+	ModePush = "push"
 )
 
 type ClientApplication struct {

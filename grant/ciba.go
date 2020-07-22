@@ -7,9 +7,12 @@ const (
 type CibaGrantTypeInterface interface {
 	InitRepositories(repo1, repo2 string)
 	GrantTypeInterface
+	SetInterval(val int)
 }
 
-type CibaGrant struct{}
+type CibaGrant struct{
+	PollInterval *int
+}
 
 func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{}
@@ -17,4 +20,8 @@ func NewCibaGrant() *CibaGrant {
 
 func (cg *CibaGrant) GetIdentifier() string {
 	return IdentifierCiba
+}
+
+func (cg *CibaGrant) SetInterval(val *int) {
+	cg.PollInterval = val
 }

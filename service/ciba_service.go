@@ -1,11 +1,11 @@
 package service
 
 import (
-	"github.com/adisazhar123/ciba-server/domain"
-	"github.com/adisazhar123/ciba-server/grant"
-	"github.com/adisazhar123/ciba-server/repository"
-	"github.com/adisazhar123/ciba-server/service/http_auth"
-	"github.com/adisazhar123/ciba-server/util"
+	"github.com/adisazhar123/go-ciba/domain"
+	"github.com/adisazhar123/go-ciba/grant"
+	"github.com/adisazhar123/go-ciba/repository"
+	"github.com/adisazhar123/go-ciba/service/http_auth"
+	"github.com/adisazhar123/go-ciba/util"
 	"github.com/cockroachdb/errors"
 	"log"
 	"net/http"
@@ -62,10 +62,10 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 type AuthenticationResponse struct {
 	AuthReqId string `json:"auth_req_id"`
 	ExpiresIn int    `json:"expires_in"`
-	Interval  int    `json:"interval,omitempty"`
+	Interval  *int    `json:"interval,omitempty"`
 }
 
-func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn, interval int) *AuthenticationResponse {
+func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int, interval *int) *AuthenticationResponse {
 	return &AuthenticationResponse{
 		AuthReqId: authReqId,
 		ExpiresIn: expiresIn,
@@ -96,7 +96,7 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	}
 
 	// Create new ciba session
-	ciba := domain.NewCibaSession(request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, request.Interval)
+	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, cs.grant.(*grant.CibaGrant).PollInterval)
 	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
 		log.Fatalln("An error occurred", err)
 		return nil, err
@@ -111,6 +111,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	if clientApp == nil {
 		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
 	}
+	cs.clientApp = clientApp
 
 	// Make sure authentication type is correct e.g. http_auth basic, client secret JWT etc.
 	clientAuth := cs.authenticationContext.AuthenticateClient(request.r, clientApp)
@@ -157,6 +158,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Client registered using ping or push must provide client_notification_token
+	// TODO: Allow custom logic for client notification token
 	if (request.ClientNotificationToken == "") && (clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush) {
 		log.Println("failed here notif")
 		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
@@ -173,6 +175,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Check if user code is correct
+	// TODO: Allow custom logic for user code comparison
 	if clientApp.IsUserCodeSupported() && user.GetUseCode() != request.UserCode {
 		return util.ErrInvalidUserCode, errors.New(util.ErrInvalidUserCode.ErrorDescription)
 	}

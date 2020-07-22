@@ -2,7 +2,7 @@ package domain
 
 import (
 	"encoding/json"
-	"github.com/adisazhar123/ciba-server/util"
+	"github.com/adisazhar123/go-ciba/util"
 	"time"
 )
 
@@ -26,7 +26,7 @@ type CibaSession struct {
 	// When the Ciba session (authentication request id) will expire in seconds after the session is created.
 	ExpiresIn               int
 	// The minimum interval rate for poll token requests. Only for token mode poll.
-	Interval                int
+	Interval                *int
 	// The validity of the Ciba session.
 	Valid                   bool
 	// The id token for this Ciba session.
@@ -46,7 +46,10 @@ func generateAuthReqId() string {
 	return util.GenerateRandomString()
 }
 
-func NewCibaSession(hint, bindingMessage, clientNotificationToken, scope string, expiresIn, interval int) *CibaSession {
+func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNotificationToken, scope string, expiresIn int, interval *int) *CibaSession {
+	if clientApp.TokenMode != ModePoll {
+		interval = nil
+	}
 	return &CibaSession{
 		Hint:                    hint,
 		ClientNotificationToken: clientNotificationToken,

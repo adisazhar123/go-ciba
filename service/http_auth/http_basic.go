@@ -2,7 +2,7 @@ package http_auth
 
 import (
 	"encoding/base64"
-	"github.com/adisazhar123/ciba-server/domain"
+	"github.com/adisazhar123/go-ciba/domain"
 	"log"
 	"net/http"
 	"strings"

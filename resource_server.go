@@ -1,1 +1,1 @@
-package ciba_server
+package go_ciba

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"github.com/adisazhar123/ciba-server/domain"
+	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/go-redis/redis/v8"
 )
 

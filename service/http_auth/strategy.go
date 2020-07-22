@@ -1,7 +1,7 @@
 package http_auth
 
 import (
-	"github.com/adisazhar123/ciba-server/domain"
+	"github.com/adisazhar123/go-ciba/domain"
 	"net/http"
 )
 

@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/adisazhar123/ciba-server/domain"
+import "github.com/adisazhar123/go-ciba/domain"
 
 // to store access token.
 type AccessTokenRepositoryInterface interface {

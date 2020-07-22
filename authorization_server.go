@@ -1,9 +1,9 @@
-package ciba_server
+package go_ciba
 
 import (
 	"fmt"
-	"github.com/adisazhar123/ciba-server/grant"
-	"github.com/adisazhar123/ciba-server/service"
+	"github.com/adisazhar123/go-ciba/grant"
+	"github.com/adisazhar123/go-ciba/service"
 	"log"
 	"net/http"
 )

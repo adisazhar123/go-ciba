@@ -1,7 +1,9 @@
 package repository
 
 import (
-	"github.com/adisazhar123/ciba-server/domain"
+	"fmt"
+	"github.com/adisazhar123/go-ciba/domain"
+	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/alicebob/miniredis"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -46,7 +48,20 @@ func TestCibaSessionRedisRepository_Create(t *testing.T) {
 	expiresIn := 120
 	interval := 5
 
-	newCibaSession := domain.NewCibaSession(hint, bindingMessage, token, scope, expiresIn, interval)
+	ca := domain.ClientApplication{
+		Id:                              "420d637b-ff22-4e48-88fb-237aa2131e72",
+		Secret:                          "secret",
+		Name:                            "client-app-poll",
+		Scope:                           "openid email profile",
+		TokenMode:                       domain.ModePoll,
+		ClientNotificationEndpoint:      "go-ciba.dev/notification",
+		AuthenticationRequestSigningAlg: "",
+		UserCodeParameterSupported:      false,
+		TokenEndpointAuthMethod:         "client_secret_basic",
+		GrantTypes:                      fmt.Sprintf("%s", grant.IdentifierCiba),
+	}
+
+	newCibaSession := domain.NewCibaSession(&ca, hint, bindingMessage, token, scope, expiresIn, &interval)
 	err := repo.Create(newCibaSession)
 
 	assert.Empty(t, err)
@@ -55,7 +70,7 @@ func TestCibaSessionRedisRepository_Create(t *testing.T) {
 	assert.Equal(t, newCibaSession.ClientNotificationToken, token)
 	assert.Equal(t, newCibaSession.Scope, scope)
 	assert.Equal(t, newCibaSession.ExpiresIn, expiresIn)
-	assert.Equal(t, newCibaSession.Interval, interval)
+	assert.Equal(t, *newCibaSession.Interval, interval)
 }
 
 func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
