@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"fmt"
-	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,6 +12,7 @@ func TestNewCibaSession(t *testing.T) {
 	scope := "openid profile Email"
 	expiresIn := 120
 	interval := 5
+	identiferCiba := "urn:openid:params:grant-type:ciba"
 
 	ca := ClientApplication{
 		Id:                              "420d637b-ff22-4e48-88fb-237aa2131e72",
@@ -25,7 +24,7 @@ func TestNewCibaSession(t *testing.T) {
 		AuthenticationRequestSigningAlg: "",
 		UserCodeParameterSupported:      false,
 		TokenEndpointAuthMethod:         "client_secret_basic",
-		GrantTypes:                      fmt.Sprintf("%s", grant.IdentifierCiba),
+		GrantTypes:                      identiferCiba,
 	}
 
 	cs := NewCibaSession(&ca, hint, bindingMessage, token, scope, expiresIn, &interval)

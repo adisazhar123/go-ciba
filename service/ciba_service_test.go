@@ -128,11 +128,11 @@ var (
 func newClientApplicationVolatileRepository() *ClientApplicationVolatileRepository {
 	return &ClientApplicationVolatileRepository{
 		data: map[string]*domain.ClientApplication{
-			fmt.Sprintf("client_application:%s", ClientAppPush.Id): &ClientAppPush,
-			fmt.Sprintf("client_application:%s", ClientAppPing.Id): &ClientAppPing,
+			fmt.Sprintf("client_application:%s", ClientAppPush.Id):                   &ClientAppPush,
+			fmt.Sprintf("client_application:%s", ClientAppPing.Id):                   &ClientAppPing,
 			fmt.Sprintf("client_application:%s", ClientAppNotRegisteredToUseCiba.Id): &ClientAppNotRegisteredToUseCiba,
-			fmt.Sprintf("client_application:%s", ClientAppPushUserCodeSupported.Id): &ClientAppPushUserCodeSupported,
-			fmt.Sprintf("client_application:%s", ClientAppPingUserCodeSupported.Id): &ClientAppPingUserCodeSupported,
+			fmt.Sprintf("client_application:%s", ClientAppPushUserCodeSupported.Id):  &ClientAppPushUserCodeSupported,
+			fmt.Sprintf("client_application:%s", ClientAppPingUserCodeSupported.Id):  &ClientAppPingUserCodeSupported,
 		},
 	}
 }
@@ -183,6 +183,15 @@ type CibaSessionVolatileRepository struct {
 /// In memory mock of CibaSessionRepositoryInterface.
 func newCibaSessionVolatileRepository() *CibaSessionVolatileRepository {
 	return &CibaSessionVolatileRepository{data: make(map[string]*domain.CibaSession)}
+}
+
+func (c CibaSessionVolatileRepository) FindById(id string) (*domain.CibaSession, error) {
+	return c.data[id], nil
+}
+
+func (c CibaSessionVolatileRepository) Update(cibaSession *domain.CibaSession) error {
+	c.data[cibaSession.AuthReqId] = cibaSession
+	return nil
 }
 
 func (c CibaSessionVolatileRepository) Create(cibaSession *domain.CibaSession) error {
@@ -287,7 +296,6 @@ func TestCibaService_HandleAuthenticationRequest_Valid_WithUserCode_Ping(t *test
 }
 
 // TODO: Test for poll mode
-
 
 // Tests a Ciba request with client application registered as ping mode
 // the authorization head built has incorrect client_id so the authentication

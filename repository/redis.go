@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/go-redis/redis/v8"
 )
@@ -73,4 +75,46 @@ type CibaSessionRedisRepository struct {
 
 func (c CibaSessionRedisRepository) Create(cibaSession *domain.CibaSession) error {
 	return c.client.Set(c.ctx, "ciba_session:"+cibaSession.AuthReqId, cibaSession, 0).Err()
+}
+
+func (c CibaSessionRedisRepository) FindById(id string) (*domain.CibaSession, error) {
+	key := fmt.Sprintf("ciba_session:%s", id)
+	val, err := c.client.Get(c.ctx, key).Result()
+	if val == "" {
+		return nil, errors.New("ciba session not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+	cibaSession := &domain.CibaSession{}
+	if err := cibaSession.UnmarshalBinary([]byte(val)); err != nil {
+		return nil, err
+	}
+	return cibaSession, nil
+}
+
+func (c CibaSessionRedisRepository) Update(cibaSession *domain.CibaSession) error {
+	key := fmt.Sprintf("ciba_session:%s", cibaSession.AuthReqId)
+	return c.client.Set(c.ctx, key, cibaSession, 0).Err()
+}
+
+type KeyRedisRepository struct {
+	client *redis.Client
+	ctx    context.Context
+}
+
+func (k KeyRedisRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
+	key := fmt.Sprintf("oauth_key:%s", clientId)
+	val, err := k.client.Get(k.ctx, key).Result()
+	if val == "" {
+		return nil, errors.New("oauth key not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+	oauthKey := &domain.Key{}
+	if err := oauthKey.UnmarshalBinary([]byte(val)); err != nil {
+		return nil, err
+	}
+	return oauthKey, nil
 }

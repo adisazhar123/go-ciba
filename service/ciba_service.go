@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type AuthenticationRequest struct {
@@ -62,7 +63,7 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 type AuthenticationResponse struct {
 	AuthReqId string `json:"auth_req_id"`
 	ExpiresIn int    `json:"expires_in"`
-	Interval  *int    `json:"interval,omitempty"`
+	Interval  *int   `json:"interval,omitempty"`
 }
 
 func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int, interval *int) *AuthenticationResponse {
@@ -73,8 +74,14 @@ func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int, inter
 	}
 }
 
+type ConsentRequest struct {
+	AuthReqId string `json:"auth_req_id"`
+	Consented string `json:"consented"`
+}
+
 type CibaServiceInterface interface {
 	GrantServiceInterface
+	ConsentServiceInterface
 }
 
 type CibaService struct {
@@ -87,6 +94,8 @@ type CibaService struct {
 
 	clientApp *domain.ClientApplication
 	grant     grant.GrantTypeInterface
+
+	mutex sync.Mutex
 }
 
 func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{}, error) {
@@ -179,6 +188,34 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	if clientApp.IsUserCodeSupported() && user.GetUseCode() != request.UserCode {
 		return util.ErrInvalidUserCode, errors.New(util.ErrInvalidUserCode.ErrorDescription)
 	}
+
+	// TODO: Dispatch to client app using push mode
+
+	return true, nil
+}
+
+func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {
+	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
+
+	if cibaSession == nil || err != nil {
+		// not valid
+		return false, err
+	}
+	if !cibaSession.Valid || cibaSession.Consented != nil || cibaSession.IsTimeExpired() {
+		// not valid
+	}
+	consented := false
+	if request.Consented == "yes" {
+		consented = true
+	}
+	cibaSession.Consented = &consented
+	if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
+		// not valid
+		return false, err
+	}
+
+	// TODO: dispatch to ping client app that token is ready to fetch
+	// consented + not consented
 
 	return true, nil
 }

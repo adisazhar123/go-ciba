@@ -6,3 +6,7 @@ type GrantServiceInterface interface {
 
 	GetGrantIdentifier() string
 }
+
+type ConsentServiceInterface interface {
+	HandleConsentRequest(request *ConsentRequest)
+}

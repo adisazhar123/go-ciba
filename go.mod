@@ -12,4 +12,6 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/stretchr/testify v1.6.1
 	github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e // indirect
+	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
+	gopkg.in/square/go-jose.v2 v2.5.1
 )

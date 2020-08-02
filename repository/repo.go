@@ -9,6 +9,8 @@ type AccessTokenRepositoryInterface interface {
 // to store ciba session.
 type CibaSessionRepositoryInterface interface {
 	Create(cibaSession *domain.CibaSession) error
+	FindById(id string) (*domain.CibaSession, error)
+	Update(cibaSession *domain.CibaSession) error
 }
 
 // to store client application.
@@ -19,6 +21,7 @@ type ClientApplicationRepositoryInterface interface {
 
 // to store public & private key.
 type KeyRepositoryInterface interface {
+	FindPrivateKeyByClientId(clientId string) (*domain.Key, error)
 }
 
 type UserAccountRepositoryInterface interface {
