@@ -6,8 +6,8 @@ import (
 )
 
 func TestGenerateRandomString(t *testing.T) {
-	string := GenerateRandomString()
-	assert.NotEmpty(t, string)
+	randomString := GenerateRandomString()
+	assert.NotEmpty(t, randomString)
 }
 
 func TestGenerateUuid(t *testing.T) {

@@ -30,7 +30,6 @@ func (as *AuthorizationServer) HandleCibaRequest(request *service.Authentication
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
 		panic(fmt.Sprintf("grant %s doesn't exist", grant.IdentifierCiba))
 	}
-
 	return as.grantServices[grant.IdentifierCiba].HandleAuthenticationRequest(request)
 }
 

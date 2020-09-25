@@ -23,18 +23,18 @@ func (gje *GoJoseEncryption) Encode(payload interface{}, key, alg, keyId string)
 	jwtKey := []byte(key)
 	block, _ := pem.Decode(jwtKey)
 	pKey, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
+	opt := &jose.SignerOptions{
+		NonceSource: nil,
+		EmbedJWK:    false,
+	}
+	opt.WithType("jwt")
+	opt.WithBase64(true)
+	opt.WithHeader("kid", keyId)
 
 	sig, err := jose.NewSigner(jose.SigningKey{
 		Algorithm: jose.SignatureAlgorithm(alg),
 		Key:       pKey,
-	}, &jose.SignerOptions{
-		NonceSource: nil,
-		EmbedJWK:    false,
-		ExtraHeaders: map[jose.HeaderKey]interface{}{
-			"kid": keyId,
-			"typ": "jwt",
-		},
-	})
+	}, opt)
 
 	if err != nil {
 		panic(err)
