@@ -96,6 +96,10 @@ var (
 		ErrorDescription: "Client authentication failed (e.g., invalid client credentials, unknown client, no client authentication included, or unsupported authentication method).",
 		Code:             http.StatusUnauthorized,
 	}
+	ErrGeneral = &GeneralError{
+		Error:            "general_error",
+		ErrorDescription: "An error occurred on our end.",
+	}
 )
 
 type OidcError struct {
@@ -103,4 +107,9 @@ type OidcError struct {
 	ErrorDescription string `json:"error_description"`
 	ErrorUri         string `json:"error_uri,omitempty"`
 	Code             int    `json:"status_code,omitempty"`
+}
+
+type GeneralError struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
 }
