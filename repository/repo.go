@@ -16,7 +16,7 @@ type CibaSessionRepositoryInterface interface {
 // to store client application.
 type ClientApplicationRepositoryInterface interface {
 	Register(clientApp *domain.ClientApplication) error
-	FindById(id string) *domain.ClientApplication
+	FindById(id string) (*domain.ClientApplication, error)
 }
 
 // to store public & private key.

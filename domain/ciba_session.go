@@ -48,6 +48,18 @@ func (cs *CibaSession) IsTimeExpired() bool {
 	return now > t
 }
 
+func (cs *CibaSession) IsConsented() bool {
+	return *cs.Consented == true
+}
+
+func (cs *CibaSession) IsAuthorizationPending() bool {
+	return cs.Consented == nil
+}
+
+func (cs *CibaSession) IsValid() bool {
+	return cs.Valid == true
+}
+
 func generateAuthReqId() string {
 	return util.GenerateRandomString()
 }

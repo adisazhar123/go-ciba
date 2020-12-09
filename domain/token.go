@@ -1,11 +1,19 @@
 package domain
 
-import "github.com/adisazhar123/go-ciba/util"
+import (
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/base64"
+	"fmt"
+	"hash"
+
+	"github.com/adisazhar123/go-ciba/util"
+)
 
 type AccessToken struct {
-	value     string
-	tokenType string
-	expiresIn string
+	Value     string
+	TokenType string
+	ExpiresIn int
 }
 
 type DecodedIdToken struct {
@@ -15,7 +23,7 @@ type EncodedIdToken struct {
 	value string
 }
 
-type IdTokenManager struct {
+type TokenManager struct {
 	e util.EncryptionInterface
 }
 
@@ -24,12 +32,48 @@ type Tokens struct {
 	AccessToken AccessToken
 }
 
-type IdTokenInterface interface {
-	CreateIdToken(claims interface{}, key, alg, keyId string) *EncodedIdToken
+type TokenInterface interface {
+	CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken
+	CreateAccessToken() string
 }
 
-func (tkn *IdTokenManager) CreateIdToken(claims interface{}, key, alg, keyId string) *EncodedIdToken {
-	return &EncodedIdToken{value: tkn.e.Encode(claims, key, alg, keyId)}
+func NewTokenManager() *TokenManager {
+	return &TokenManager{e: util.NewGoJoseEncryption()}
+}
+
+func (tkn *TokenManager) CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken {
+	addTokenHashClaim(claims, accessToken, alg)
+	return EncodedIdToken{value: tkn.e.Encode(claims, key, alg, keyId)}
+}
+
+func (tkn *TokenManager) CreateAccessToken() string {
+	return util.GenerateUuid()
+}
+
+func addTokenHashClaim(claims map[string]interface{}, token, alg string) {
+	claims["at_hash"] = createTokenHash(token, alg)
+}
+
+func createTokenHash(token, alg string) string {
+	alg = alg[2:]
+	hashAlg := fmt.Sprintf("SHA%s", alg)
+
+	var h hash.Hash
+
+	if hashAlg == "SHA256" {
+		h = sha256.New()
+	} else if hashAlg == "SHA512" {
+		h = sha512.New()
+	} else {
+		panic("hash algorithm not supported")
+	}
+
+	h.Write([]byte(token))
+	hashed := h.Sum(nil)
+	hashStr := fmt.Sprintf("%x", hashed)
+	tokenHash := hashStr[:(len(hashStr)/2)-1]
+
+	return base64.URLEncoding.EncodeToString([]byte(tokenHash))
 }
 
 type DefaultIdTokenClaims struct {
@@ -47,7 +91,7 @@ type DefaultIdTokenClaims struct {
 	Iat int `json:"iat"`
 	// Time when the End-User authentication occurred.
 	AuthTime int `json:"auth_time"`
-	// String value used to associate a Client session with an ID Token, and to mitigate replay attacks.
+	// String Value used to associate a Client session with an ID Token, and to mitigate replay attacks.
 	Nonce string `json:"nonce"`
 
 	// Optional
@@ -67,6 +111,6 @@ type DefaultCibaIdTokenClaims struct {
 	AtHash string `json:"at_hash,omitempty"`
 	// Refresh token hash
 	RtHash string `json:"urn:openid:params:jwt:claim:rt_hash,omitempty"`
-	// Authentication request id value
+	// Authentication request id Value
 	AuthReqId string `json:"urn:openid:params:jwt:claim:auth_req_id,omitempty"`
 }

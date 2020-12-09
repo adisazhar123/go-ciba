@@ -1,17 +1,18 @@
 package service
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/repository"
 	"github.com/adisazhar123/go-ciba/service/http_auth"
 	"github.com/adisazhar123/go-ciba/util"
 	"github.com/cockroachdb/errors"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type AuthenticationRequest struct {

@@ -15,6 +15,10 @@ type EncryptionInterface interface {
 type GoJoseEncryption struct {
 }
 
+func NewGoJoseEncryption() *GoJoseEncryption {
+	return &GoJoseEncryption{}
+}
+
 func (gje *GoJoseEncryption) Decode(jwt interface{}, key string, allowedAlgorithms string) interface{} {
 	panic("implement me")
 }
