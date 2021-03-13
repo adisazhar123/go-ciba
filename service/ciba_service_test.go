@@ -143,13 +143,13 @@ func (c *ClientApplicationVolatileRepository) Register(clientApp *domain.ClientA
 	return nil
 }
 
-func (c *ClientApplicationVolatileRepository) FindById(id string) *domain.ClientApplication {
+func (c *ClientApplicationVolatileRepository) FindById(id string) (*domain.ClientApplication, error) {
 	key := fmt.Sprintf("client_application:%s", id)
 	clientApp, exist := c.data[key]
 	if !exist {
-		return nil
+		return nil, nil
 	}
-	return clientApp
+	return clientApp, nil
 }
 
 type UserAccountVolatileRepository struct {

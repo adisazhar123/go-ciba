@@ -37,14 +37,20 @@ type CibaSession struct {
 	// The scope requested for this Ciba session.
 	Scope string
 	// The latest time a token was requested using this Ciba session.
-	LatestTokenRequestedAt int // in unix timestamp
+	// in unix timestamp. Default Value is null, which means it hasn't
+	// requested a token yet. This is used for POLL mode only.
+	LatestTokenRequestedAt *int
 	// The time when this Ciba session was created.
 	CreatedAt time.Time
 }
 
+func (cs *CibaSession) Expire() {
+	cs.Valid = false
+}
+
 func (cs *CibaSession) IsTimeExpired() bool {
-	t := int(cs.CreatedAt.Unix()) + cs.ExpiresIn
 	now := int(time.Now().Unix())
+	t := int(cs.CreatedAt.Unix()) + cs.ExpiresIn
 	return now > t
 }
 

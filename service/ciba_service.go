@@ -117,7 +117,10 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 
 func (cs *CibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) (interface{}, error) {
 	// Make sure client application exists
-	clientApp := cs.clientAppRepo.FindById(request.ClientId)
+	clientApp, err := cs.clientAppRepo.FindById(request.ClientId)
+	if err != nil {
+		return util.ErrGeneral, err
+	}
 	if clientApp == nil {
 		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
 	}
@@ -156,7 +159,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	// Make sure hint is valid, it must correspond to a valid user
 	user, err := cs.userAccountRepo.FindById(request.LoginHint)
 	if err != nil {
-		panic("error userAccountRepo.FindById")
+		return util.ErrGeneral, err
 	}
 	if user == nil {
 		return util.ErrUnknownUserId, errors.New(util.ErrUnknownUserId.ErrorDescription)
@@ -195,6 +198,11 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	return true, nil
 }
 
+const (
+	Yes = "yes"
+	No = "no"
+)
+
 func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
 
@@ -206,7 +214,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		// not valid
 	}
 	consented := false
-	if request.Consented == "yes" {
+	if request.Consented == Yes {
 		consented = true
 	}
 	cibaSession.Consented = &consented

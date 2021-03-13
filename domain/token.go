@@ -4,77 +4,12 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"hash"
 
 	"github.com/adisazhar123/go-ciba/util"
 )
-
-type AccessToken struct {
-	Value     string
-	TokenType string
-	ExpiresIn int
-}
-
-type DecodedIdToken struct {
-}
-
-type EncodedIdToken struct {
-	value string
-}
-
-type TokenManager struct {
-	e util.EncryptionInterface
-}
-
-type Tokens struct {
-	IdToken     EncodedIdToken
-	AccessToken AccessToken
-}
-
-type TokenInterface interface {
-	CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken
-	CreateAccessToken() string
-}
-
-func NewTokenManager() *TokenManager {
-	return &TokenManager{e: util.NewGoJoseEncryption()}
-}
-
-func (tkn *TokenManager) CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken {
-	addTokenHashClaim(claims, accessToken, alg)
-	return EncodedIdToken{value: tkn.e.Encode(claims, key, alg, keyId)}
-}
-
-func (tkn *TokenManager) CreateAccessToken() string {
-	return util.GenerateUuid()
-}
-
-func addTokenHashClaim(claims map[string]interface{}, token, alg string) {
-	claims["at_hash"] = createTokenHash(token, alg)
-}
-
-func createTokenHash(token, alg string) string {
-	alg = alg[2:]
-	hashAlg := fmt.Sprintf("SHA%s", alg)
-
-	var h hash.Hash
-
-	if hashAlg == "SHA256" {
-		h = sha256.New()
-	} else if hashAlg == "SHA512" {
-		h = sha512.New()
-	} else {
-		panic("hash algorithm not supported")
-	}
-
-	h.Write([]byte(token))
-	hashed := h.Sum(nil)
-	hashStr := fmt.Sprintf("%x", hashed)
-	tokenHash := hashStr[:(len(hashStr)/2)-1]
-
-	return base64.URLEncoding.EncodeToString([]byte(tokenHash))
-}
 
 type DefaultIdTokenClaims struct {
 	// Required
@@ -113,4 +48,100 @@ type DefaultCibaIdTokenClaims struct {
 	RtHash string `json:"urn:openid:params:jwt:claim:rt_hash,omitempty"`
 	// Authentication request id Value
 	AuthReqId string `json:"urn:openid:params:jwt:claim:auth_req_id,omitempty"`
+}
+
+type AccessToken struct {
+	Value    string
+	ClientId string
+	Expires  int
+	UserId   string
+	Scope    string
+}
+
+func (at *AccessToken) MarshalBinary() ([]byte, error) {
+	return json.Marshal(at)
+}
+
+func (at *AccessToken) UnmarshalBinary(data []byte) error {
+	if err := json.Unmarshal(data, &data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewAccessToken(value, clientId, userId, scope string, expires int) *AccessToken {
+	return &AccessToken{
+		Value:    value,
+		ClientId: clientId,
+		Expires:  expires,
+		UserId:   userId,
+		Scope:    scope,
+	}
+}
+
+type AccessTokenInternal struct {
+	Value     string
+	TokenType string
+	ExpiresIn int
+}
+
+type DecodedIdToken struct {
+}
+
+type EncodedIdToken struct {
+	Value string
+}
+
+type TokenManager struct {
+	e util.EncryptionInterface
+}
+
+type Tokens struct {
+	IdToken     EncodedIdToken
+	AccessToken AccessTokenInternal
+}
+
+type TokenInterface interface {
+	CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken
+	CreateAccessToken() string
+}
+
+func NewTokenManager() *TokenManager {
+	return &TokenManager{e: util.NewGoJoseEncryption()}
+}
+
+func (tkn *TokenManager) CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken {
+	addTokenHashClaim(claims, accessToken, alg)
+	return EncodedIdToken{Value: tkn.e.Encode(claims, key, alg, keyId)}
+}
+
+func (tkn *TokenManager) CreateAccessToken() string {
+	return util.GenerateUuid()
+}
+
+func addTokenHashClaim(claims map[string]interface{}, token, alg string) {
+	claims["at_hash"] = createTokenHash(token, alg)
+}
+
+func createTokenHash(token, alg string) string {
+	alg = alg[2:]
+	hashAlg := fmt.Sprintf("SHA%s", alg)
+
+	var h hash.Hash
+
+	if hashAlg == "SHA256" {
+		h = sha256.New()
+	} else if hashAlg == "SHA512" {
+		h = sha512.New()
+	} else {
+		panic("hash algorithm not supported")
+	}
+
+	h.Write([]byte(token))
+	hashed := h.Sum(nil)
+	hashStr := fmt.Sprintf("%x", hashed)
+	tokenHash := hashStr[:(len(hashStr)/2)-1]
+
+	return base64.URLEncoding.EncodeToString([]byte(tokenHash))
 }

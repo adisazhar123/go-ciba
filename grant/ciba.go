@@ -25,7 +25,7 @@ type CibaGrant struct {
 func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{
 		PollInterval: nil,
-		Config:       GrantConfig{
+		Config: GrantConfig{
 			Issuer:              "issuer-ciba.example.com",
 			IdTokenLifetime:     3600,
 			AccessTokenLifetime: 3600,
@@ -67,8 +67,8 @@ func (cg *CibaGrant) CreateAccessTokenAndIdToken(defaultClaims domain.DefaultCib
 	idToken := cg.TokenManager.CreateIdToken(claims, key, alg, keyId, accessToken)
 
 	return &domain.Tokens{
-		IdToken:     idToken,
-		AccessToken: domain.AccessToken{
+		IdToken: idToken,
+		AccessToken: domain.AccessTokenInternal{
 			Value:     accessToken,
 			TokenType: "bearer",
 			ExpiresIn: cg.Config.AccessTokenLifetime,

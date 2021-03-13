@@ -43,5 +43,5 @@ func TestIdTokenManager_CreateIdToken(t *testing.T) {
 	et := mgr.CreateIdToken(claims, string(privateKey), alg, kId, token)
 
 	assert.NotNil(t, et)
-	assert.Equal(t, idToken, et.value)
+	assert.Equal(t, idToken, et.Value)
 }

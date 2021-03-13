@@ -1,15 +1,15 @@
 package domain
 
 import (
-	"crypto"
 	"encoding/json"
 )
 
 type Key struct {
+	ID       string
 	ClientId string
 	Alg      string
-	Public   crypto.PublicKey
-	Private  crypto.PrivateKey
+	Public   string
+	Private  string
 }
 
 func (k *Key) MarshalBinary() ([]byte, error) {
