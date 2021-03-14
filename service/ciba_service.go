@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/adisazhar123/go-ciba/domain"
@@ -12,7 +11,6 @@ import (
 	"github.com/adisazhar123/go-ciba/repository"
 	"github.com/adisazhar123/go-ciba/service/http_auth"
 	"github.com/adisazhar123/go-ciba/util"
-	"github.com/cockroachdb/errors"
 )
 
 type AuthenticationRequest struct {
@@ -99,7 +97,7 @@ type CibaService struct {
 	mutex sync.Mutex
 }
 
-func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{}, error) {
+func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{},  *util.OidcError) {
 	validation, err := cs.ValidateAuthenticationRequestParameters(request)
 	if err != nil {
 		return validation, err
@@ -108,32 +106,32 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	// Create new ciba session
 	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, cs.grant.(*grant.CibaGrant).PollInterval)
 	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
-		log.Fatalln("An error occurred", err)
-		return nil, err
+		log.Println("An error occurred", err)
+		return nil, util.ErrGeneral
 	}
 	// TODO: Send via notification for push mode
 	return makeSuccessfulAuthenticationResponse(ciba.AuthReqId, ciba.ExpiresIn, ciba.Interval), nil
 }
 
-func (cs *CibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) (interface{}, error) {
+func (cs *CibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) (interface{}, *util.OidcError) {
 	// Make sure client application exists
 	clientApp, err := cs.clientAppRepo.FindById(request.ClientId)
 	if err != nil {
-		return util.ErrGeneral, err
+		return nil, util.ErrGeneral
 	}
 	if clientApp == nil {
-		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
+		return nil, util.ErrUnauthorizedClient
 	}
 	cs.clientApp = clientApp
 
 	// Make sure authentication type is correct e.g. http_auth basic, client secret JWT etc.
 	clientAuth := cs.authenticationContext.AuthenticateClient(request.r, clientApp)
 	if !clientAuth {
-		return util.ErrInvalidClient, errors.New(util.ErrInvalidClient.ErrorDescription)
+		return nil, util.ErrInvalidClient
 	}
 	// Make sure client app is registered to use CIBA
-	if !util.SliceStringContains(strings.Split(clientApp.GetGrantTypes(), " "), grant.IdentifierCiba) {
-		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
+	if !clientApp.IsRegisteredToUseGrantType(grant.IdentifierCiba) {
+		return nil, util.ErrUnauthorizedClient
 	}
 
 	// TODO: Validate JWT if request is signed
@@ -153,44 +151,44 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	if hintCounter == 0 || hintCounter > 1 {
 		// TODO: return error login hint == 0 || hint > 1
 		log.Println("login hint failed", request)
-		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
+		return nil, util.ErrInvalidRequest
 	}
 
 	// Make sure hint is valid, it must correspond to a valid user
 	user, err := cs.userAccountRepo.FindById(request.LoginHint)
 	if err != nil {
-		return util.ErrGeneral, err
+		return nil, util.ErrGeneral
 	}
 	if user == nil {
-		return util.ErrUnknownUserId, errors.New(util.ErrUnknownUserId.ErrorDescription)
+		return nil, util.ErrUnknownUserId
 	}
 
 	// Make sure scope is valid for chosen client
 	if !cs.scopeUtil.ScopeExist(clientApp.GetScope(), request.Scope) {
-		return util.ErrInvalidScope, errors.New(util.ErrInvalidScope.ErrorDescription)
+		return nil, util.ErrInvalidScope
 	}
 
 	// Client registered using ping or push must provide client_notification_token
 	// TODO: Allow custom logic for client notification token
 	if (request.ClientNotificationToken == "") && (clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush) {
 		log.Println("failed here notif")
-		return util.ErrInvalidRequest, errors.New(util.ErrInvalidRequest.ErrorDescription)
+		return nil, util.ErrInvalidRequest
 	}
 
 	// TODO: Allow custom logic for binding message
 	if request.BindingMessage != "" && len(request.BindingMessage) > 10 {
-		return util.ErrInvalidBindingMessage, errors.New(util.ErrInvalidBindingMessage.ErrorDescription)
+		return nil, util.ErrInvalidBindingMessage
 	}
 
 	// Client registered using user code must supply user_code
 	if clientApp.IsUserCodeSupported() && request.UserCode == "" {
-		return util.ErrMissingUserCode, errors.New(util.ErrMissingUserCode.ErrorDescription)
+		return nil, util.ErrMissingUserCode
 	}
 
 	// Check if user code is correct
 	// TODO: Allow custom logic for user code comparison
 	if clientApp.IsUserCodeSupported() && user.GetUseCode() != request.UserCode {
-		return util.ErrInvalidUserCode, errors.New(util.ErrInvalidUserCode.ErrorDescription)
+		return nil, util.ErrInvalidUserCode
 	}
 
 	// TODO: Dispatch to client app using push mode
@@ -200,7 +198,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 
 const (
 	Yes = "yes"
-	No = "no"
+	No  = "no"
 )
 
 func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {

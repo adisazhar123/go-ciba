@@ -75,23 +75,3 @@ func (cg *CibaGrant) CreateAccessTokenAndIdToken(defaultClaims domain.DefaultCib
 		},
 	}
 }
-
-func (cg *CibaGrant) CreateIdToken(userId, clientId, accessToken string) {
-	//claims := domain.DefaultCibaIdTokenClaims{
-	//	DefaultIdTokenClaims: domain.DefaultIdTokenClaims{
-	//		Iss:      cg.Config.Issuer,
-	//		Sub:      userId,
-	//		Aud:      clientId,
-	//		Exp:      int(time.Now().Unix()) + cg.Config.IdTokenLifetime,
-	//		Iat:      0,
-	//		AuthTime: int(time.Now().Unix()),
-	//	},
-	//	AtHash:               "",
-	//	RtHash:               "",
-	//	AuthReqId:            "",
-	//}
-}
-
-func accessTokenHash(accessToken, clientId string) string {
-	return ""
-}

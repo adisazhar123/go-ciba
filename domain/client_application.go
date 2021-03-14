@@ -2,6 +2,8 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/adisazhar123/go-ciba/util"
 )
 
@@ -119,4 +121,8 @@ func (ca *ClientApplication) GetAuthenticationRequestSigningAlg() string {
 
 func (ca *ClientApplication) GetUserCodeParameterSupported() bool {
 	return ca.UserCodeParameterSupported
+}
+
+func (ca *ClientApplication) IsRegisteredToUseGrantType(grantType string) bool {
+	return util.SliceStringContains(strings.Split(ca.GetGrantTypes(), " "), grantType)
 }

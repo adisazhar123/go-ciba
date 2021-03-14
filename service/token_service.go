@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/repository"
 	"github.com/adisazhar123/go-ciba/util"
-	"github.com/cockroachdb/errors"
 )
 
 type TokenRequest struct {
@@ -38,14 +36,13 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 }
 
 type TokenServiceInterface interface {
-	HandleTokenRequest(request *TokenRequest) (interface{}, error)
-	ValidateTokenRequest(request *TokenRequest) (interface{}, error)
-	GrantAccessToken(request *TokenRequest) (interface{}, error)
+	HandleTokenRequest(request *TokenRequest) (interface{}, *util.OidcError)
+	ValidateTokenRequest(request *TokenRequest) (interface{}, *util.OidcError)
+	GrantAccessToken(request *TokenRequest) (interface{}, *util.OidcError)
 }
 
 type TokenConfig struct {
 	PollingInterval     int
-	Alg                 string
 	AccessTokenLifeTime int
 	IdTokenLifeTime     int
 	Issuer              string
@@ -61,25 +58,24 @@ type TokenService struct {
 	grant *grant.CibaGrant
 }
 
-func (t *TokenService) HandleTokenRequest(request *TokenRequest) (interface{}, error) {
+func (t *TokenService) HandleTokenRequest(request *TokenRequest) (interface{}, *util.OidcError) {
 	return t.GrantAccessToken(request)
 }
 
-func (t *TokenService) validate(cs *domain.CibaSession) (interface{}, error) {
+func (t *TokenService) validate(cs *domain.CibaSession) (interface{}, *util.OidcError) {
 	if !cs.IsValid() || cs.IsTimeExpired() {
-		return util.ErrExpiredToken, errors.New(util.ErrExpiredToken.ErrorDescription)
+		return util.ErrExpiredToken, util.ErrExpiredToken
 	} else if cs.IsAuthorizationPending() {
-		return util.ErrAuthorizationPending, errors.New(util.ErrAuthorizationPending.ErrorDescription)
+		return util.ErrAuthorizationPending, util.ErrAuthorizationPending
 	} else if !cs.IsConsented() {
-		return util.ErrAccessDenied, errors.New(util.ErrAccessDenied.ErrorDescription)
+		return util.ErrAccessDenied, util.ErrAccessDenied
 	}
 	return true, nil
 }
 
 type UserConsentResponse struct {
-	err     error
-	errType interface{}
-	status  bool
+	err    *util.OidcError
+	status bool
 }
 
 func waitForUserConsent(response chan UserConsentResponse, authReqId string, cibaSessionRepo repository.CibaSessionRepositoryInterface) {
@@ -90,64 +86,61 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 		if err != nil {
 			log.Println(err)
 			response <- UserConsentResponse{
-				err:     err,
-				errType: nil,
-				status:  false,
+				err:    util.ErrGeneral,
+				status: false,
 			}
 			break
 		}
 		if cs.IsAuthorizationPending() {
 			now := int(time.Now().Unix())
 			if (start - now) > timeout {
-				log.Printf("%s Waiting for user consent hit timeout\n", LogTag)
+				log.Printf("%s waiting for user consent hit timeout\n", LogTag)
 				response <- UserConsentResponse{
-					err:     errors.New(util.ErrAuthorizationPending.ErrorDescription),
-					errType: util.ErrAuthorizationPending,
-					status:  false,
+					err:    util.ErrAuthorizationPending,
+					status: false,
 				}
 				break
 			}
 			time.Sleep(1)
 			continue
 		} else if cs.IsConsented() {
-			log.Printf("%s User has consented\n", LogTag)
+			log.Printf("%s user has consented\n", LogTag)
 			response <- UserConsentResponse{
-				err:     nil,
-				errType: nil,
-				status:  true,
+				err:    nil,
+				status: true,
 			}
 			break
 		} else {
-			log.Printf("%s User didn't give consent\n", LogTag)
+			log.Printf("%s user didn't give consent\n", LogTag)
 			response <- UserConsentResponse{
-				err:     errors.New(util.ErrAccessDenied.ErrorDescription),
-				errType: util.ErrAccessDenied,
-				status:  false,
+				err:    util.ErrAccessDenied,
+				status: false,
 			}
 			break
 		}
 	}
 }
 
-func (t *TokenService) GrantAccessToken(request *TokenRequest) (interface{}, error) {
+func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
 	// Do some validation
 	// Check if auth_req_id exists
 	cs, err := t.cibaSessionRepo.FindById(request.authReqId)
 	if err != nil {
 		log.Println(err)
-		return util.ErrGeneral, err
+		return nil, util.ErrGeneral
+	} else if cs == nil || (cs.ClientId != request.clientId) {
+		return nil, util.ErrInvalidGrant
 	}
-	if cs == nil {
-		return false, err
-	}
+
 	// Check if client_id that is attached to auth_req_id is registered to use CIBA
 	ca, err := t.clientAppRepo.FindById(cs.ClientId)
 	if err != nil {
 		log.Println(err)
-		return util.ErrGeneral, err
-	}
-	if ca == nil {
-		return util.ErrInvalidClient, errors.New(util.ErrInvalidClient.ErrorDescription)
+		return nil, util.ErrGeneral
+	} else if ca == nil {
+		return nil, util.ErrInvalidClient
+	} else if !ca.IsRegisteredToUseGrantType(grant.IdentifierCiba) {
+		return nil, util.ErrUnauthorizedClient
 	}
 
 	// POLL method is long polling
@@ -160,39 +153,39 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (interface{}, err
 			// Make sure that the time between the last token request
 			// and the current token request isn't too quick
 			if reqInterval < t.config.PollingInterval {
-				return util.ErrSlowDown, errors.New(util.ErrSlowDown.ErrorDescription)
+				return nil, util.ErrSlowDown
 			}
 		}
 
 		cs.LatestTokenRequestedAt = &now
 		if err := t.cibaSessionRepo.Update(cs); err != nil {
-			log.Printf("%s Failed updating CIBA session.", LogTag)
-			return util.ErrGeneral, err
+			log.Printf("%s failed updating CIBA session.", LogTag)
+			return nil, util.ErrGeneral
 		}
 
 		ucrChan := make(chan UserConsentResponse)
 		go waitForUserConsent(ucrChan, request.authReqId, t.cibaSessionRepo)
 		resp := <-ucrChan
 		if resp.err != nil {
-			log.Printf("%s Failed waiting for user consent. %s", LogTag, resp.err.Error())
-			return resp.errType, resp.err
+			log.Printf("%s failed waiting for user consent. %s", LogTag, resp.err.Error())
+			return nil, resp.err
 		}
 	} else if ca.TokenMode == domain.ModePing {
-		res, err := t.validate(cs)
+		_, err := t.validate(cs)
 		if err != nil {
-			return res, err
+			return nil, err
 		}
 	} else if ca.TokenMode == domain.ModePush {
-		return util.ErrUnauthorizedClient, errors.New(util.ErrUnauthorizedClient.ErrorDescription)
+		return nil, util.ErrUnauthorizedClient
 	}
 
 	key, err := t.keyRepo.FindPrivateKeyByClientId(request.clientId)
 
 	if key == nil {
-		log.Printf("%s Cannot find key for client ID. %s", LogTag, request.clientId)
-		return util.ErrGeneral, fmt.Errorf("cannot find key for client ID %s", request.clientId)
+		log.Printf("%s cannot find key for client ID %s", LogTag, request.clientId)
+		return nil, util.ErrInvalidGrant
 	}
-
+	// TODO: support extra claims
 	extraClaims := make(map[string]interface{})
 	now := int(time.Now().Unix())
 	// TODO: support other grant types as well, not just CIBA.
@@ -206,19 +199,19 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (interface{}, err
 			Sub:      cs.UserId,
 		},
 		AuthReqId: request.authReqId,
-	}, extraClaims, key.Private, t.config.Alg, key.ID)
+	}, extraClaims, key.Private, key.Alg, key.ID)
 	// value, clientId, userId, scope string, expires int
 	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, now+tokens.AccessToken.ExpiresIn)
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {
-		log.Printf("%s Cannot create access token. %s", LogTag, err.Error())
-		return util.ErrGeneral, err
+		log.Printf("%s cannot create access token. %s", LogTag, err.Error())
+		return nil, util.ErrGeneral
 	}
 
 	cs.Expire()
 	cs.IdToken = tokens.IdToken.Value
 	if err := t.cibaSessionRepo.Update(cs); err != nil {
-		log.Printf("%s Failed updating CIBA session. %s", LogTag, err.Error())
-		return util.ErrGeneral, err
+		log.Printf("%s failed updating CIBA session. %s", LogTag, err.Error())
+		return nil, util.ErrGeneral
 	}
 
 	return tokens, nil
