@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/go-redis/redis/v8"
 )
@@ -103,7 +104,18 @@ type KeyRedisRepository struct {
 	ctx    context.Context
 }
 
-func (k KeyRedisRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
+func NewKeyRedisRepository(addr string) *KeyRedisRepository {
+	cli := redis.NewClient(&redis.Options{
+		Addr: addr,
+	})
+
+	return &KeyRedisRepository{
+		client: cli,
+		ctx:    context.Background(),
+	}
+}
+
+func (k *KeyRedisRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
 	key := fmt.Sprintf("oauth_key:%s", clientId)
 	val, err := k.client.Get(k.ctx, key).Result()
 	if val == "" {

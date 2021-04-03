@@ -1,15 +1,18 @@
 package service
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/repository"
 	"github.com/adisazhar123/go-ciba/service/http_auth"
+	"github.com/adisazhar123/go-ciba/service/transport"
 	"github.com/adisazhar123/go-ciba/util"
 )
 
@@ -87,6 +90,7 @@ type CibaService struct {
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	userAccountRepo repository.UserAccountRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
+	keyRepo repository.KeyRepositoryInterface
 
 	scopeUtil             util.ScopeUtil
 	authenticationContext *http_auth.ClientAuthenticationContext
@@ -94,10 +98,16 @@ type CibaService struct {
 	clientApp *domain.ClientApplication
 	grant     grant.GrantTypeInterface
 
+	notificationClient transport.NotificationInterface
+
+	clientAppNotif transport.NotificationInterface
+
+	tokenConfig *TokenConfig
+
 	mutex sync.Mutex
 }
 
-func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{},  *util.OidcError) {
+func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (interface{}, *util.OidcError) {
 	validation, err := cs.ValidateAuthenticationRequestParameters(request)
 	if err != nil {
 		return validation, err
@@ -109,7 +119,17 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 		log.Println("An error occurred", err)
 		return nil, util.ErrGeneral
 	}
-	// TODO: Send via notification for push mode
+
+	firebaseToken := "dPI3eiikuIOyVtqdfVsSzf:APA91bGuu6JA9ROzHXuywum7HWLTmxNmbz9y45Ma50q26sEJZ4T7LoPvqm8aiuah_MM2WhQPmbIo3h2o0FBzlJ6n1VuQdu_HXHlXexy2eUjtwuWXdWyFz3wjUeCsR7Rvn_3jqrVyp5F-"
+
+	if err := cs.notificationClient.Send(map[string]interface{}{
+		"to":               firebaseToken,
+		"data.auth_req_id": ciba.AuthReqId,
+	}); err != nil {
+		log.Printf("[go-ciba][cibaservice] an error occured sending consent to user %s", err.Error())
+		return nil, util.ErrGeneral
+	}
+
 	return makeSuccessfulAuthenticationResponse(ciba.AuthReqId, ciba.ExpiresIn, ciba.Interval), nil
 }
 
@@ -191,8 +211,6 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 		return nil, util.ErrInvalidUserCode
 	}
 
-	// TODO: Dispatch to client app using push mode
-
 	return true, nil
 }
 
@@ -204,12 +222,17 @@ const (
 func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
 
-	if cibaSession == nil || err != nil {
+	if err != nil {
 		// not valid
-		return false, err
+		return false, util.ErrGeneral
+	}
+	if cibaSession == nil {
+		return false, errors.New("ciba session not found")
 	}
 	if !cibaSession.Valid || cibaSession.Consented != nil || cibaSession.IsTimeExpired() {
 		// not valid
+		log.Printf("[go-ciba][cibaservice] ciba session %s isn't valid\n", cibaSession.AuthReqId)
+		return false, util.ErrExpiredToken
 	}
 	consented := false
 	if request.Consented == Yes {
@@ -221,8 +244,55 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		return false, err
 	}
 
+	clientApp, err := cs.clientAppRepo.FindById(cibaSession.ClientId)
+	if err != nil {
+		return false, err
+	}
+	if clientApp == nil {
+		return false, errors.New("client app not found")
+	}
+
 	// TODO: dispatch to ping client app that token is ready to fetch
 	// consented + not consented
+
+	if clientApp.TokenMode == domain.ModePush {
+		extraClaims := make(map[string]interface{})
+		now := int(time.Now().Unix())
+
+		key, err := cs.keyRepo.FindPrivateKeyByClientId(cibaSession.ClientId)
+
+		if err != nil {
+			return false, err
+		}
+
+		if key == nil {
+			log.Printf("%s cannot find key for client ID %s", LogTag, cibaSession.ClientId)
+			return false, util.ErrInvalidGrant
+		}
+
+		extraClaims["urn:openid:params:jwt:claim:auth_req_id"] = cibaSession.AuthReqId
+
+		tokens := cs.grant.(*grant.CibaGrant).CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{
+			DefaultIdTokenClaims: domain.DefaultIdTokenClaims{
+				Aud:      cibaSession.ClientId,
+				AuthTime: now,
+				Iat:      now,
+				Exp:      cs.tokenConfig.IdTokenLifeTime,
+				Iss:      cs.tokenConfig.Issuer,
+				Sub:      cibaSession.UserId,
+			},
+			AuthReqId: cibaSession.AuthReqId,
+		}, extraClaims, key.Private, key.Alg, key.ID)
+
+
+		// cibaSession.Expire()
+		// cibaSession.IdToken = tokens.IdToken.Value
+		// if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
+		// 	log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
+		// 	return false, util.ErrGeneral
+		// }
+
+	}
 
 	return true, nil
 }

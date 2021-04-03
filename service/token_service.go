@@ -93,7 +93,8 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 		}
 		if cs.IsAuthorizationPending() {
 			now := int(time.Now().Unix())
-			if (start - now) > timeout {
+			timeTaken := now - start
+			if timeTaken > timeout {
 				log.Printf("%s waiting for user consent hit timeout\n", LogTag)
 				response <- UserConsentResponse{
 					err:    util.ErrAuthorizationPending,

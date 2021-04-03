@@ -2,12 +2,14 @@ package repository
 
 import (
 	"fmt"
-	"github.com/adisazhar123/go-ciba/domain"
-	"github.com/adisazhar123/go-ciba/grant"
-	"github.com/alicebob/miniredis"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/adisazhar123/go-ciba/domain"
+	"github.com/adisazhar123/go-ciba/grant"
+	"github.com/adisazhar123/go-ciba/test_data"
+	"github.com/alicebob/miniredis"
+	"github.com/stretchr/testify/assert"
 )
 
 func newTestRedis() *miniredis.Miniredis {
@@ -115,4 +117,53 @@ func TestUserAccountRedisRepository_FindById_InvalidUser(t *testing.T) {
 
 	assert.Empty(t, foundUser)
 	assert.NotNil(t, err)
+}
+
+func TestCibaSessionRedisRepository_FindById_ShouldReturnError_WhenNotFound(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(redis.Addr())
+	invalidSessionId := "invalid"
+	bytes, _ := test_data.CibaSession1.MarshalBinary()
+	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
+
+	_, err := repo.FindById(invalidSessionId)
+
+	assert.EqualError(t, err, "ciba session not found")
+}
+
+func TestCibaSessionRedisRepository_FindById_ShouldReturnCibaSession(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(redis.Addr())
+	bytes, _ := test_data.CibaSession1.MarshalBinary()
+	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
+
+	cs, err := repo.FindById(test_data.CibaSession1.AuthReqId)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, cs)
+}
+
+func TestCibaSessionRedisRepository_Update(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(redis.Addr())
+	bytes, _ := test_data.CibaSession1.MarshalBinary()
+	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
+
+	err := repo.Update(&domain.CibaSession{
+		AuthReqId: test_data.CibaSession1.AuthReqId,
+	})
+
+	assert.Nil(t, err)
+}
+
+func TestKeyRedisRepository_FindPrivateKeyByClientId(t *testing.T) {
+	redis := newTestRedis()
+	repo := NewKeyRedisRepository(redis.Addr())
+	bytes, _ := test_data.Key1.MarshalBinary()
+	redis.Set("oauth_key:"+test_data.Key1.ClientId, string(bytes))
+
+	key, err := repo.FindPrivateKeyByClientId(test_data.Key1.ClientId)
+
+	assert.Nil(t, err)
+	assert.Equal(t, test_data.Key1, *key)
 }

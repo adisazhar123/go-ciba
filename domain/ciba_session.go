@@ -91,7 +91,7 @@ func (cs *CibaSession) MarshalBinary() ([]byte, error) {
 }
 
 func (cs *CibaSession) UnmarshalBinary(data []byte) error {
-	if err := json.Unmarshal(data, &data); err != nil {
+	if err := json.Unmarshal(data, &cs); err != nil {
 		return err
 	}
 

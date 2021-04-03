@@ -113,7 +113,8 @@ func NewTokenManager() *TokenManager {
 
 func (tkn *TokenManager) CreateIdToken(claims map[string]interface{}, key, alg, keyId, accessToken string) EncodedIdToken {
 	addTokenHashClaim(claims, accessToken, alg)
-	return EncodedIdToken{Value: tkn.e.Encode(claims, key, alg, keyId)}
+	token, _ := tkn.e.Encode(claims, key, alg, keyId)
+	return EncodedIdToken{Value: token}
 }
 
 func (tkn *TokenManager) CreateAccessToken() string {

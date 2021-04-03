@@ -46,6 +46,24 @@ func newAuthenticationContext() *http_auth.ClientAuthenticationContext {
 	return &http_auth.ClientAuthenticationContext{}
 }
 
+type notificationClientMock struct { }
+
+func (n notificationClientMock) Send(data map[string]interface{}) error {
+	return nil
+}
+
+func newCibaService() *CibaService {
+	return &CibaService{
+		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
+		userAccountRepo:       newUserAccountVolatileRepository(),
+		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
+		scopeUtil:             util.ScopeUtil{},
+		authenticationContext: newAuthenticationContext(),
+		grant:                 grant.NewCibaGrant(),
+		notificationClient: &notificationClientMock{},
+	}
+}
+
 // Util function to build authorization header basic.
 func createAuthorizationHeaderBasic(id, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(id + ":" + password))
@@ -63,15 +81,7 @@ func TestCibaService_GetGrantIdentifier(t *testing.T) {
 // Tests a Ciba request with client application registered as ping mode
 // expected to succeed/ no error.
 func TestCibaService_HandleAuthenticationRequest_Valid_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
@@ -101,15 +111,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_Ping(t *testing.T) {
 // user code parameter is given
 // expected to succeed/ no error.
 func TestCibaService_HandleAuthenticationRequest_Valid_WithUserCode_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPingUserCodeSupported.Id, test_data.ClientAppPingUserCodeSupported.Secret)
 
 	form := url.Values{}
@@ -142,15 +144,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_WithUserCode_Ping(t *test
 // the authorization head built has incorrect client_id so the authentication
 // will fail. Expected return error unauthorized_client.
 func TestCibaService_HandleAuthenticationRequest_Invalid_ClientId_ClientCredentials_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id+"break-id", test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
@@ -176,15 +170,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_ClientId_ClientCredenti
 // the authorization head built has incorrect client_secret so the authentication
 // will fail invalid_client.
 func TestCibaService_HandleAuthenticationRequest_Invalid_Password_ClientCredentials_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret+"break-secret")
 
 	form := url.Values{}
@@ -210,15 +196,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_Password_ClientCredenti
 // multiple login hints are used: login_hint, login_hint_token, id_token_hint
 // expected return error invalid_request.
 func TestCibaService_HandleAuthenticationRequest_Invalid_MultipleHints_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
@@ -246,15 +224,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_MultipleHints_Ping(t *t
 // client is requesting a scope that isn't registered
 // expected return error invalid_scope.
 func TestCibaService_HandleAuthenticationRequest_Invalid_UnregisteredScope_Ping(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
@@ -280,15 +250,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_UnregisteredScope_Ping(
 // this client is registered to use authorization code and client credentials
 // expected return error unauthorized_client
 func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppNotRegisteredToUseCiba(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppNotRegisteredToUseCiba.Id, test_data.ClientAppNotRegisteredToUseCiba.Secret)
 
 	form := url.Values{}
@@ -314,15 +276,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppNotRegisteredT
 // which is required for ping and push modes
 // expected return error invalid_request
 func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppPingWithoutNotificationToken(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
@@ -348,15 +302,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppPingWithoutNot
 // which is required for ping and push modes
 // expected return error invalid_request
 func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppPushWithoutNotificationToken(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPush.Id, test_data.ClientAppPush.Secret)
 
 	form := url.Values{}
@@ -382,15 +328,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_ClientAppPushWithoutNot
 // a binding message should be concise
 // expected return error invalid_binding_message
 func TestCibaService_HandleAuthenticationRequest_Invalid_BindingMessageTooLong(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPush.Id, test_data.ClientAppPush.Secret)
 
 	form := url.Values{}
@@ -413,15 +351,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_BindingMessageTooLong(t
 }
 
 func TestCibaService_HandleAuthenticationRequest_Invalid_UserCodeNotGiven(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPushUserCodeSupported.Id, test_data.ClientAppPushUserCodeSupported.Secret)
 
 	form := url.Values{}
@@ -444,15 +374,7 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_UserCodeNotGiven(t *tes
 }
 
 func TestCibaService_HandleAuthenticationRequest_Invalid_WrongUserCode(t *testing.T) {
-	cs := &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		clientApp:             nil,
-		grant:                 grant.NewCibaGrant(),
-	}
+	cs := newCibaService()
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPushUserCodeSupported.Id, test_data.ClientAppPushUserCodeSupported.Secret)
 
 	form := url.Values{}

@@ -17,7 +17,7 @@ func (k *Key) MarshalBinary() ([]byte, error) {
 }
 
 func (k *Key) UnmarshalBinary(data []byte) error {
-	if err := json.Unmarshal(data, &data); err != nil {
+	if err := json.Unmarshal(data, &k); err != nil {
 		return err
 	}
 

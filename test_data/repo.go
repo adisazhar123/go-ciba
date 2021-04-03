@@ -16,6 +16,60 @@ type ClientApplicationVolatileRepository struct {
 }
 
 var (
+	privateKeyFile, _ = os.Open("../test_data/key.pem")
+	publicKeyFile, _  = os.Open("../test_data/public.pem")
+
+	privateKey, _ = ioutil.ReadAll(privateKeyFile)
+	publicKey, _  = ioutil.ReadAll(publicKeyFile)
+
+	Key1 = domain.Key{
+		ID:       "1",
+		ClientId: "unknown",
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
+	Key2 = domain.Key{
+		ID:       "2",
+		ClientId: CibaSession9.ClientId,
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
+	Key3 = domain.Key{
+		ID:       "3",
+		ClientId: CibaSession10.ClientId,
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
+	Key4 = domain.Key{
+		ID:       "4",
+		ClientId: CibaSession11.ClientId,
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
+	Key5 = domain.Key{
+		ID:       "5",
+		ClientId: CibaSession12.ClientId,
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
+	Key6 = domain.Key{
+		ID:       "6",
+		ClientId: CibaSession13.ClientId,
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
 	// Client applications
 	// non signed, non user code
 	ClientAppPush = domain.ClientApplication{
@@ -42,6 +96,16 @@ var (
 		UserCodeParameterSupported:      false,
 		TokenEndpointAuthMethod:         http_auth.ClientSecretBasic,
 		GrantTypes:                      fmt.Sprintf("%s", grant.IdentifierCiba),
+	}
+
+	ClientAppPoll = domain.ClientApplication{
+		Id:                         "f07aa98e-d072-4c0c-a71c-bb6d070fb002",
+		Secret:                     "secret",
+		Name:                       "client-app-poll",
+		Scope:                      "openid email profile",
+		TokenMode:                  domain.ModePoll,
+		UserCodeParameterSupported: false,
+		GrantTypes:                 fmt.Sprintf("%s", grant.IdentifierCiba),
 	}
 
 	ClientAppPushUserCodeSupported = domain.ClientApplication{
@@ -185,6 +249,48 @@ var (
 		Consented: &consent,
 		CreatedAt: time.Now(),
 	}
+
+	CibaSession10 = domain.CibaSession{
+		AuthReqId:              "1385561f-f542-432d-9f08-669c766f5051",
+		ClientId:               ClientAppPoll.Id,
+		ExpiresIn:              expiresLong,
+		Valid:                  true,
+		Consented:              &consent,
+		LatestTokenRequestedAt: nil,
+		CreatedAt:              time.Time{},
+	}
+
+	now = int(time.Now().Unix())
+
+	CibaSession11 = domain.CibaSession{
+		AuthReqId:              "38f2aec8-4cfc-4982-9bd7-35e09cc60916",
+		ClientId:               ClientAppPoll.Id,
+		ExpiresIn:              expiresLong,
+		Valid:                  true,
+		Consented:              nil,
+		LatestTokenRequestedAt: &now,
+		CreatedAt:              time.Time{},
+	}
+
+	CibaSession12 = domain.CibaSession{
+		AuthReqId:              "f0325001-569a-4cfd-8a0f-0338b0055064",
+		ClientId:               ClientAppPoll.Id,
+		ExpiresIn:              expiresLong,
+		Valid:                  true,
+		Consented:              nil,
+		LatestTokenRequestedAt: nil,
+		CreatedAt:              time.Time{},
+	}
+
+	CibaSession13 = domain.CibaSession{
+		AuthReqId:              "aaf07d23-f414-4ba2-8ecc-5b13db3b36f2",
+		ClientId:               ClientAppPoll.Id,
+		ExpiresIn:              expiresLong,
+		Valid:                  true,
+		Consented:              &notConsent,
+		LatestTokenRequestedAt: nil,
+		CreatedAt:              time.Time{},
+	}
 )
 
 // In memory mock of ClientApplicationRepositoryInterface.
@@ -196,6 +302,7 @@ func NewClientApplicationVolatileRepository() *ClientApplicationVolatileReposito
 			fmt.Sprintf("client_application:%s", ClientAppNotRegisteredToUseCiba.Id): &ClientAppNotRegisteredToUseCiba,
 			fmt.Sprintf("client_application:%s", ClientAppPushUserCodeSupported.Id):  &ClientAppPushUserCodeSupported,
 			fmt.Sprintf("client_application:%s", ClientAppPingUserCodeSupported.Id):  &ClientAppPingUserCodeSupported,
+			fmt.Sprintf("client_application:%s", ClientAppPoll.Id):                   &ClientAppPoll,
 		},
 	}
 }
@@ -219,15 +326,19 @@ type CibaSessionVolatileRepository struct {
 // In memory mock of CibaSessionRepositoryInterface.
 func NewCibaSessionVolatileRepository() *CibaSessionVolatileRepository {
 	return &CibaSessionVolatileRepository{data: map[string]*domain.CibaSession{
-		fmt.Sprintf("%s", CibaSession1.AuthReqId): &CibaSession1,
-		fmt.Sprintf("%s", CibaSession2.AuthReqId): &CibaSession2,
-		fmt.Sprintf("%s", CibaSession3.AuthReqId): &CibaSession3,
-		fmt.Sprintf("%s", CibaSession4.AuthReqId): &CibaSession4,
-		fmt.Sprintf("%s", CibaSession5.AuthReqId): &CibaSession5,
-		fmt.Sprintf("%s", CibaSession6.AuthReqId): &CibaSession6,
-		fmt.Sprintf("%s", CibaSession7.AuthReqId): &CibaSession7,
-		fmt.Sprintf("%s", CibaSession8.AuthReqId): &CibaSession8,
-		fmt.Sprintf("%s", CibaSession9.AuthReqId): &CibaSession9,
+		fmt.Sprintf("%s", CibaSession1.AuthReqId):  &CibaSession1,
+		fmt.Sprintf("%s", CibaSession2.AuthReqId):  &CibaSession2,
+		fmt.Sprintf("%s", CibaSession3.AuthReqId):  &CibaSession3,
+		fmt.Sprintf("%s", CibaSession4.AuthReqId):  &CibaSession4,
+		fmt.Sprintf("%s", CibaSession5.AuthReqId):  &CibaSession5,
+		fmt.Sprintf("%s", CibaSession6.AuthReqId):  &CibaSession6,
+		fmt.Sprintf("%s", CibaSession7.AuthReqId):  &CibaSession7,
+		fmt.Sprintf("%s", CibaSession8.AuthReqId):  &CibaSession8,
+		fmt.Sprintf("%s", CibaSession9.AuthReqId):  &CibaSession9,
+		fmt.Sprintf("%s", CibaSession10.AuthReqId): &CibaSession10,
+		fmt.Sprintf("%s", CibaSession11.AuthReqId): &CibaSession11,
+		fmt.Sprintf("%s", CibaSession12.AuthReqId): &CibaSession12,
+		fmt.Sprintf("%s", CibaSession13.AuthReqId): &CibaSession13,
 	}}
 }
 
@@ -251,33 +362,16 @@ type KeyVolatileRepository struct {
 }
 
 func NewKeyVolatileRepository() *KeyVolatileRepository {
-	privateKeyFile, _ := os.Open("../test_data/key.pem")
-	publicKeyFile, _ := os.Open("../test_data/public.pem")
 	defer privateKeyFile.Close()
 	defer publicKeyFile.Close()
 
-	privateKey, _ := ioutil.ReadAll(privateKeyFile)
-	publicKey, _ := ioutil.ReadAll(publicKeyFile)
-
-	key1 := domain.Key{
-		ID:       "1",
-		ClientId: "unknown",
-		Alg:      "RS256",
-		Public:   string(publicKey),
-		Private:  string(privateKey),
-	}
-
-	key2 := domain.Key{
-		ID:       "2",
-		ClientId: CibaSession9.ClientId,
-		Alg:      "RS256",
-		Public:   string(publicKey),
-		Private:  string(privateKey),
-	}
-
 	return &KeyVolatileRepository{data: map[string]*domain.Key{
-		fmt.Sprintf("%s", key1.ID): &key1,
-		fmt.Sprintf("%s", key2.ID): &key2,
+		fmt.Sprintf("%s", Key1.ID): &Key1,
+		fmt.Sprintf("%s", Key2.ID): &Key2,
+		fmt.Sprintf("%s", Key3.ID): &Key3,
+		fmt.Sprintf("%s", Key4.ID): &Key4,
+		fmt.Sprintf("%s", Key5.ID): &Key5,
+		fmt.Sprintf("%s", Key6.ID): &Key6,
 	}}
 }
 

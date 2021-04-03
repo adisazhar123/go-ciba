@@ -3,12 +3,14 @@ package util
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"log"
+
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 type EncryptionInterface interface {
-	Encode(payload interface{}, key, alg, keyId string) string
+	Encode(payload interface{}, key, alg, keyId string) (string, error)
 	Decode(jwt interface{}, key string, allowedAlgorithms string) interface{}
 }
 
@@ -23,7 +25,7 @@ func (gje *GoJoseEncryption) Decode(jwt interface{}, key string, allowedAlgorith
 	panic("implement me")
 }
 
-func (gje *GoJoseEncryption) Encode(payload interface{}, key, alg, keyId string) string {
+func (gje *GoJoseEncryption) Encode(payload interface{}, key, alg, keyId string) (string, error) {
 	jwtKey := []byte(key)
 	block, _ := pem.Decode(jwtKey)
 	pKey, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -41,13 +43,15 @@ func (gje *GoJoseEncryption) Encode(payload interface{}, key, alg, keyId string)
 	}, opt)
 
 	if err != nil {
-		panic(err)
+		log.Printf("[go-ciba][encryption] an error occured create new signer: %s\n", err.Error())
+		return "", err
 	}
 
 	raw, err := jwt.Signed(sig).Claims(payload).CompactSerialize()
 
 	if err != nil {
-		panic(err)
+		log.Printf("[go-ciba][encryption] an error occured serializing jwt claims: %s\n", err.Error())
+		return "", err
 	}
-	return raw
+	return raw, nil
 }

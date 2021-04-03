@@ -150,3 +150,50 @@ func TestTokenService_GrantAccessToken_ShouldReturnTokens_WhenClientAppPingIsVal
 	assert.NotNil(t, res.AccessToken)
 	assert.NotNil(t, res.IdToken)
 }
+
+func TestTokenService_GrantAccessToken_ShouldReturnTokens_WhenClientAppPollIsValid_Already_Consented(t *testing.T) {
+	ts := newTokenService()
+
+	res, err := ts.GrantAccessToken(&TokenRequest{
+		clientId:  test_data.CibaSession10.ClientId,
+		authReqId: test_data.CibaSession10.AuthReqId,
+	})
+
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
+	assert.NotNil(t, res.AccessToken)
+	assert.NotNil(t, res.IdToken)
+}
+
+func TestTokenService_GrantAccessToken_ShouldNotReturnErrorSlowDown_WhenClientAppPollIsPollingTooFast(t *testing.T) {
+	ts := newTokenService()
+
+	_, err := ts.GrantAccessToken(&TokenRequest{
+		clientId:  test_data.CibaSession11.ClientId,
+		authReqId: test_data.CibaSession11.AuthReqId,
+	})
+
+	assert.EqualError(t, err, util.ErrSlowDown.Error())
+}
+
+func TestTokenService_GrantAccessToken_ShouldReturnErrorAuthorizationPending_WhenClientAppPollIsntBeingGivenAuthorizationByUser(t *testing.T) {
+	ts := newTokenService()
+
+	_, err := ts.GrantAccessToken(&TokenRequest{
+		clientId:  test_data.CibaSession12.ClientId,
+		authReqId: test_data.CibaSession12.AuthReqId,
+	})
+
+	assert.EqualError(t, err, util.ErrAuthorizationPending.Error())
+}
+
+func TestTokenService_GrantAccessToken_ShouldReturnErrorAccessDenied_WhenClientAppIsDeniedAuthorizationByUser(t *testing.T) {
+	ts := newTokenService()
+
+	_, err := ts.GrantAccessToken(&TokenRequest{
+		clientId:  test_data.CibaSession13.ClientId,
+		authReqId: test_data.CibaSession13.AuthReqId,
+	})
+
+	assert.EqualError(t, err, util.ErrAccessDenied.Error())
+}

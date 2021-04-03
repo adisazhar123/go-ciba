@@ -8,6 +8,12 @@ const (
 	IdentifierCiba = "urn:openid:params:grant-type:ciba"
 )
 
+var (
+	DefaultPollIntervalInSeconds        = 5
+	DefaultIdTokenLifeTimeInSeconds     = 3600
+	DefaultAccessTokenLifeTimeInSeconds = 3600
+)
+
 type CibaGrantTypeInterface interface {
 	GrantTypeInterface
 
@@ -17,19 +23,27 @@ type CibaGrantTypeInterface interface {
 
 type CibaGrant struct {
 	PollInterval *int
-	Config       GrantConfig
+	Config       *GrantConfig
 	TokenManager domain.TokenInterface
 }
 
 // TODO: add passable config
 func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{
-		PollInterval: nil,
-		Config: GrantConfig{
+		PollInterval: &DefaultPollIntervalInSeconds,
+		Config: &GrantConfig{
 			Issuer:              "issuer-ciba.example.com",
-			IdTokenLifetime:     3600,
-			AccessTokenLifetime: 3600,
+			IdTokenLifetime:     DefaultIdTokenLifeTimeInSeconds,
+			AccessTokenLifetime: DefaultAccessTokenLifeTimeInSeconds,
 		},
+		TokenManager: domain.NewTokenManager(),
+	}
+}
+
+func NewCustomCibaGrant(pollInterval *int, grantConfig *GrantConfig) *CibaGrant {
+	return &CibaGrant{
+		PollInterval: pollInterval,
+		Config:       grantConfig,
 		TokenManager: domain.NewTokenManager(),
 	}
 }
@@ -64,6 +78,7 @@ func formatCibaClaims(defaultClaims domain.DefaultCibaIdTokenClaims, extraClaims
 func (cg *CibaGrant) CreateAccessTokenAndIdToken(defaultClaims domain.DefaultCibaIdTokenClaims, extraClaims map[string]interface{}, key, alg, keyId string) *domain.Tokens {
 	claims := formatCibaClaims(defaultClaims, extraClaims)
 	accessToken := cg.TokenManager.CreateAccessToken()
+
 	idToken := cg.TokenManager.CreateIdToken(claims, key, alg, keyId, accessToken)
 
 	return &domain.Tokens{
