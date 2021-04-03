@@ -188,7 +188,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 	}
 	// TODO: support extra claims
 	extraClaims := make(map[string]interface{})
-	now := int(time.Now().Unix())
+	now := util.NowInt()
 	// TODO: support other grant types as well, not just CIBA.
 	tokens := t.grant.CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{
 		DefaultIdTokenClaims: domain.DefaultIdTokenClaims{
@@ -202,7 +202,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 		AuthReqId: request.authReqId,
 	}, extraClaims, key.Private, key.Alg, key.ID)
 	// value, clientId, userId, scope string, expires int
-	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, now+tokens.AccessToken.ExpiresIn)
+	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, now + tokens.AccessToken.ExpiresIn)
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {
 		log.Printf("%s cannot create access token. %s", LogTag, err.Error())
 		return nil, util.ErrGeneral

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/adisazhar123/go-ciba/grant"
@@ -229,9 +228,27 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 	if cibaSession == nil {
 		return false, errors.New("ciba session not found")
 	}
+
+	clientApp, err := cs.clientAppRepo.FindById(cibaSession.ClientId)
+	if err != nil {
+		return false, err
+	}
+	if clientApp == nil {
+		return false, errors.New("client app not found")
+	}
+
 	if !cibaSession.Valid || cibaSession.Consented != nil || cibaSession.IsTimeExpired() {
 		// not valid
 		log.Printf("[go-ciba][cibaservice] ciba session %s isn't valid\n", cibaSession.AuthReqId)
+		if clientApp.TokenMode == domain.ModePush {
+			_ = cs.clientAppNotif.Send(map[string]interface{}{
+				"token_method": domain.ModePush,
+				"success": false,
+				"oidc_error": util.ErrExpiredToken,
+				"endpoint": clientApp.ClientNotificationEndpoint,
+				"client_notification_token": cibaSession.ClientNotificationToken,
+			})
+		}
 		return false, util.ErrExpiredToken
 	}
 	consented := false
@@ -244,20 +261,9 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		return false, err
 	}
 
-	clientApp, err := cs.clientAppRepo.FindById(cibaSession.ClientId)
-	if err != nil {
-		return false, err
-	}
-	if clientApp == nil {
-		return false, errors.New("client app not found")
-	}
-
-	// TODO: dispatch to ping client app that token is ready to fetch
-	// consented + not consented
-
-	if clientApp.TokenMode == domain.ModePush {
+	if consented && clientApp.TokenMode == domain.ModePush {
 		extraClaims := make(map[string]interface{})
-		now := int(time.Now().Unix())
+		now := util.NowInt()
 
 		key, err := cs.keyRepo.FindPrivateKeyByClientId(cibaSession.ClientId)
 
@@ -284,15 +290,31 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 			AuthReqId: cibaSession.AuthReqId,
 		}, extraClaims, key.Private, key.Alg, key.ID)
 
+		cibaSession.Expire()
+		cibaSession.IdToken = tokens.IdToken.Value
 
-		// cibaSession.Expire()
-		// cibaSession.IdToken = tokens.IdToken.Value
-		// if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
-		// 	log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
-		// 	return false, util.ErrGeneral
-		// }
+		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
+			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
+			return false, util.ErrGeneral
+		}
 
+	} else if !consented && clientApp.TokenMode == domain.ModePush {
+		_ = cs.clientAppNotif.Send(map[string]interface{}{
+			"token_method": domain.ModePush,
+			"success": false,
+			"oidc_error": util.ErrAccessDenied,
+			"client_notification_token": cibaSession.ClientNotificationToken,
+			"endpoint": clientApp.ClientNotificationEndpoint,
+		})
+	} else if clientApp.TokenMode == domain.ModePing {
+		_ = cs.clientAppNotif.Send(map[string]interface{}{
+			"token_method": domain.ModePing,
+			"client_notification_token": cibaSession.ClientNotificationToken,
+			"endpoint": clientApp.ClientNotificationEndpoint,
+			"auth_req_id": cibaSession.AuthReqId,
+		})
 	}
+
 
 	return true, nil
 }

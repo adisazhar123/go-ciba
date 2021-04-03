@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/adisazhar123/go-ciba/domain"
+	"github.com/adisazhar123/go-ciba/util"
 )
 
 type NotificationInterface interface {
@@ -18,12 +21,13 @@ type NotificationInterface interface {
 
 type FirebaseCloudMessaging struct {
 	client *http.Client
+	serverKey string
 }
 
-func NewFirebaseCloudMessaging() *FirebaseCloudMessaging {
+func NewFirebaseCloudMessaging(serverKey string) *FirebaseCloudMessaging {
 	return &FirebaseCloudMessaging{client: &http.Client{
 		Timeout: 5 * time.Second,
-	}}
+	}, serverKey: serverKey}
 }
 
 type fcmSendRequest struct {
@@ -46,6 +50,10 @@ func (f *FirebaseCloudMessaging) Send(data map[string]interface{}) error {
 
 	jsonBody, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPost, "https://fcm.googleapis.com/fcm/send", bytes.NewBuffer(jsonBody))
+	req.Header.Add("Authorization", fmt.Sprintf("key=%s", f.serverKey))
+	req.Header.Add("Content-Type", "application/json")
+
+	fmt.Println(string(jsonBody))
 
 	res, err := f.client.Do(req)
 
@@ -70,24 +78,61 @@ type ClientAppNotification struct {
 	client *http.Client
 }
 
-type PushTokenRequest struct {
-	AuthReqId string `json:"auth_req_id"`
-	AccessToken string `json:"access_token"`
-	TokenType string `json:"token_type"`
-	ExpiresIn int `json:"expires_in"`
-	IdToken string `json:"id_token"`
+type TokenCallbackRequest struct {
+	AuthReqId string `json:"auth_req_id,omitempty"`
+	AccessToken string `json:"access_token,omitempty"`
+	TokenType string `json:"token_type,omitempty"`
+	ExpiresIn int `json:"expires_in,omitempty"`
+	IdToken string `json:"id_token,omitempty"`
+	endpoint string
+	clientNotificationToken string
+
+	util.OidcError
+}
+
+func (c *ClientAppNotification) buildRequest(data map[string]interface{}) *TokenCallbackRequest {
+	var body *TokenCallbackRequest
+
+	tokenMethod := data["token_method"].(string)
+
+	if tokenMethod == domain.ModePush {
+		success := data["success"].(bool)
+		if success {
+			body = &TokenCallbackRequest{
+				AuthReqId:   data["auth_req_id"].(string),
+				AccessToken: data["access_token"].(string),
+				TokenType:   data["token_type"].(string),
+				ExpiresIn:   data["expires_in"].(int),
+				IdToken:     data["id_token"].(string),
+				clientNotificationToken: data["client_notification_token"].(string),
+				endpoint: data["endpoint"].(string),
+			}
+		} else {
+			body = &TokenCallbackRequest{
+				OidcError:   data["oidc_error"].(util.OidcError),
+				clientNotificationToken: data["client_notification_token"].(string),
+				endpoint: data["endpoint"].(string),
+			}
+		}
+	} else if tokenMethod == domain.ModePing {
+		body = &TokenCallbackRequest{
+			AuthReqId:   data["auth_req_id"].(string),
+			clientNotificationToken: data["client_notification_token"].(string),
+			endpoint: data["endpoint"].(string),
+		}
+	}
+
+
+	return body
 }
 
 func (c *ClientAppNotification) Send(data map[string]interface{}) error {
-	body := &PushTokenRequest{
-		AuthReqId:   data["auth_req_id"].(string),
-		AccessToken: data["access_token"].(string),
-		TokenType:   data["token_type"].(string),
-		ExpiresIn:   data["expires_in"].(int),
-		IdToken:     data["id_token"].(string),
-	}
+	body := c.buildRequest(data)
 	jsonBody, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPost, data["client_notification_endpoint"].(string), bytes.NewBuffer(jsonBody))
+
+	req, _ := http.NewRequest(http.MethodPost, body.endpoint, bytes.NewBuffer(jsonBody))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", body.clientNotificationToken))
+
 	res, err := c.client.Do(req)
 
 	if err != nil {

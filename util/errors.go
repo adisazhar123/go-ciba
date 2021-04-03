@@ -106,8 +106,8 @@ var (
 )
 
 type OidcError struct {
-	ErrorTag         string `json:"error"`
-	ErrorDescription string `json:"error_description"`
+	ErrorTag         string `json:"error,omitempty"`
+	ErrorDescription string `json:"error_description,omitempty"`
 	ErrorUri         string `json:"error_uri,omitempty"`
 	Code             int    `json:"status_code,omitempty"`
 }
