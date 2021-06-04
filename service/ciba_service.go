@@ -15,6 +15,10 @@ import (
 	"github.com/adisazhar123/go-ciba/util"
 )
 
+const (
+	logTag = "[GO-CIBA CIBA SERVICE]"
+)
+
 type AuthenticationRequest struct {
 	ClientId     string
 	ClientSecret string
@@ -33,11 +37,21 @@ type AuthenticationRequest struct {
 	request string // holds signed request content
 
 	r *http.Request
+
+	ValidateUserCode func(code, givenCode string) bool
+	ValidateBindingMessage func(bindingMessage string) bool
 }
 
 func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
-	authRequest := &AuthenticationRequest{}
-	r.ParseForm()
+	authRequest := &AuthenticationRequest{
+		ValidateUserCode: func(code, givenCode string) bool {
+			return code == givenCode
+		},
+		ValidateBindingMessage: func(bindingMessage string) bool {
+			return bindingMessage != "" && len(bindingMessage) > 10
+		},
+	}
+	_ = r.ParseForm()
 	form := r.Form
 
 	authRequest.AcrValues = form.Get("acr_values")
@@ -61,6 +75,16 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	return authRequest
 }
 
+func (ar *AuthenticationRequest) SetValidateUserCodeFunction(fn func(code, givenCode string) bool) *AuthenticationRequest {
+	ar.ValidateUserCode = fn
+	return ar
+}
+
+func (ar *AuthenticationRequest) SetValidateBindingMessageFunction(fn func(bindingMessage string) bool) *AuthenticationRequest {
+	ar.ValidateBindingMessage = fn
+	return ar
+}
+
 type AuthenticationResponse struct {
 	AuthReqId string `json:"auth_req_id"`
 	ExpiresIn int    `json:"expires_in"`
@@ -77,7 +101,7 @@ func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int, inter
 
 type ConsentRequest struct {
 	AuthReqId string `json:"auth_req_id"`
-	Consented string `json:"consented"`
+	Consented *bool
 }
 
 type CibaServiceInterface interface {
@@ -89,7 +113,7 @@ type CibaService struct {
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	userAccountRepo repository.UserAccountRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
-	keyRepo repository.KeyRepositoryInterface
+	keyRepo         repository.KeyRepositoryInterface
 
 	scopeUtil             util.ScopeUtil
 	authenticationContext *http_auth.ClientAuthenticationContext
@@ -99,9 +123,11 @@ type CibaService struct {
 
 	notificationClient transport.NotificationInterface
 
-	clientAppNotif transport.NotificationInterface
+	clientAppNotification transport.NotificationInterface
 
 	tokenConfig *TokenConfig
+
+	validateClientNotificationToken func(token string) bool
 
 	mutex sync.Mutex
 }
@@ -188,14 +214,12 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Client registered using ping or push must provide client_notification_token
-	// TODO: Allow custom logic for client notification token
-	if (request.ClientNotificationToken == "") && (clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush) {
-		log.Println("failed here notif")
+	if (clientApp.GetTokenMode() == domain.ModePing || clientApp.GetTokenMode() == domain.ModePush) && !cs.validateClientNotificationToken(request.ClientNotificationToken) {
+		log.Printf("%s client notification is missing or not well formed\n", logTag)
 		return nil, util.ErrInvalidRequest
 	}
 
-	// TODO: Allow custom logic for binding message
-	if request.BindingMessage != "" && len(request.BindingMessage) > 10 {
+	if !request.ValidateBindingMessage(request.BindingMessage) {
 		return nil, util.ErrInvalidBindingMessage
 	}
 
@@ -205,18 +229,12 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	}
 
 	// Check if user code is correct
-	// TODO: Allow custom logic for user code comparison
-	if clientApp.IsUserCodeSupported() && user.GetUseCode() != request.UserCode {
+	if clientApp.IsUserCodeSupported() && !request.ValidateUserCode(user.GetUseCode(), request.UserCode) {
 		return nil, util.ErrInvalidUserCode
 	}
 
 	return true, nil
 }
-
-const (
-	Yes = "yes"
-	No  = "no"
-)
 
 func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
@@ -241,27 +259,23 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		// not valid
 		log.Printf("[go-ciba][cibaservice] ciba session %s isn't valid\n", cibaSession.AuthReqId)
 		if clientApp.TokenMode == domain.ModePush {
-			_ = cs.clientAppNotif.Send(map[string]interface{}{
-				"token_method": domain.ModePush,
-				"success": false,
-				"oidc_error": util.ErrExpiredToken,
-				"endpoint": clientApp.ClientNotificationEndpoint,
+			_ = cs.clientAppNotification.Send(map[string]interface{}{
+				"token_method":              domain.ModePush,
+				"success":                   false,
+				"oidc_error":                util.ErrExpiredToken,
+				"endpoint":                  clientApp.ClientNotificationEndpoint,
 				"client_notification_token": cibaSession.ClientNotificationToken,
 			})
 		}
 		return false, util.ErrExpiredToken
 	}
-	consented := false
-	if request.Consented == Yes {
-		consented = true
-	}
-	cibaSession.Consented = &consented
+	cibaSession.Consented = request.Consented
 	if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
 		// not valid
 		return false, err
 	}
 
-	if consented && clientApp.TokenMode == domain.ModePush {
+	if request.Consented != nil && *request.Consented && clientApp.TokenMode == domain.ModePush {
 		extraClaims := make(map[string]interface{})
 		now := util.NowInt()
 
@@ -272,7 +286,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		}
 
 		if key == nil {
-			log.Printf("%s cannot find key for client ID %s", LogTag, cibaSession.ClientId)
+			log.Printf("%s cannot find key for client ID %s", logTag, cibaSession.ClientId)
 			return false, util.ErrInvalidGrant
 		}
 
@@ -298,23 +312,47 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 			return false, util.ErrGeneral
 		}
 
-	} else if !consented && clientApp.TokenMode == domain.ModePush {
-		_ = cs.clientAppNotif.Send(map[string]interface{}{
-			"token_method": domain.ModePush,
-			"success": false,
-			"oidc_error": util.ErrAccessDenied,
+		_ = cs.clientAppNotification.Send(map[string]interface{}{
+			"token_method":              domain.ModePush,
+			"success":                   true,
+			"auth_req_id":               cibaSession.AuthReqId,
+			"access_token":              tokens.AccessToken.Value,
+			"token_type":                tokens.AccessToken.TokenType,
+			"expires_in":                tokens.AccessToken.ExpiresIn,
+			"id_token":                  tokens.IdToken.Value,
 			"client_notification_token": cibaSession.ClientNotificationToken,
-			"endpoint": clientApp.ClientNotificationEndpoint,
+			"endpoint":                  clientApp.ClientNotificationEndpoint,
 		})
-	} else if clientApp.TokenMode == domain.ModePing {
-		_ = cs.clientAppNotif.Send(map[string]interface{}{
-			"token_method": domain.ModePing,
+	} else if request.Consented != nil && !*request.Consented && clientApp.TokenMode == domain.ModePush {
+		cibaSession.Consented = request.Consented
+
+		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
+			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
+			return false, util.ErrGeneral
+		}
+
+		_ = cs.clientAppNotification.Send(map[string]interface{}{
+			"token_method":              domain.ModePush,
+			"success":                   false,
+			"oidc_error":                util.ErrAccessDenied,
 			"client_notification_token": cibaSession.ClientNotificationToken,
-			"endpoint": clientApp.ClientNotificationEndpoint,
-			"auth_req_id": cibaSession.AuthReqId,
+			"endpoint":                  clientApp.ClientNotificationEndpoint,
+		})
+	} else if request.Consented != nil && clientApp.TokenMode == domain.ModePing {
+		cibaSession.Consented = request.Consented
+
+		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
+			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
+			return false, util.ErrGeneral
+		}
+
+		_ = cs.clientAppNotification.Send(map[string]interface{}{
+			"token_method":              domain.ModePing,
+			"client_notification_token": cibaSession.ClientNotificationToken,
+			"endpoint":                  clientApp.ClientNotificationEndpoint,
+			"auth_req_id":               cibaSession.AuthReqId,
 		})
 	}
-
 
 	return true, nil
 }

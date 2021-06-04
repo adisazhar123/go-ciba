@@ -27,7 +27,6 @@ type CibaGrant struct {
 	TokenManager domain.TokenInterface
 }
 
-// TODO: add passable config
 func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{
 		PollInterval: &DefaultPollIntervalInSeconds,

@@ -46,7 +46,7 @@ func newAuthenticationContext() *http_auth.ClientAuthenticationContext {
 	return &http_auth.ClientAuthenticationContext{}
 }
 
-type notificationClientMock struct { }
+type notificationClientMock struct{}
 
 func (n notificationClientMock) Send(data map[string]interface{}) error {
 	return nil
@@ -60,7 +60,7 @@ func newCibaService() *CibaService {
 		scopeUtil:             util.ScopeUtil{},
 		authenticationContext: newAuthenticationContext(),
 		grant:                 grant.NewCibaGrant(),
-		notificationClient: &notificationClientMock{},
+		notificationClient:    &notificationClientMock{},
 	}
 }
 
