@@ -22,7 +22,7 @@ type NotificationInterface interface {
 type FirebaseCloudMessaging struct {
 	client    *http.Client
 	serverKey string
-	baseUrl string
+	baseUrl   string
 }
 
 func NewFirebaseCloudMessaging(serverKey string) *FirebaseCloudMessaging {
@@ -31,7 +31,7 @@ func NewFirebaseCloudMessaging(serverKey string) *FirebaseCloudMessaging {
 			Timeout: 5 * time.Second,
 		},
 		serverKey: serverKey,
-		baseUrl: "https://fcm.googleapis.com/fcm/send",
+		baseUrl:   "https://fcm.googleapis.com/fcm/send",
 	}
 }
 

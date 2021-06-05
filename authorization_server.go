@@ -2,16 +2,18 @@ package go_ciba
 
 import (
 	"fmt"
-	"github.com/adisazhar123/go-ciba/grant"
-	"github.com/adisazhar123/go-ciba/service"
 	"log"
 	"net/http"
+
+	"github.com/adisazhar123/go-ciba/grant"
+	"github.com/adisazhar123/go-ciba/service"
+	"github.com/adisazhar123/go-ciba/util"
 )
 
 type AuthorizationServerInterface interface {
 	AddGrant(grant grant.GrantTypeInterface)
 	AddService(grantService service.GrantServiceInterface)
-	HandleCibaRequest(r http.Request)
+	HandleCibaRequest(r http.Request) (*service.AuthenticationResponse, *util.OidcError)
 }
 
 type AuthorizationServer struct {
@@ -26,13 +28,9 @@ func (as *AuthorizationServer) AddService(gs service.GrantServiceInterface) {
 	}
 }
 
-func (as *AuthorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) (interface{}, error) {
+func (as *AuthorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) (*service.AuthenticationResponse, *util.OidcError) {
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
 		panic(fmt.Sprintf("grant %s doesn't exist", grant.IdentifierCiba))
 	}
 	return as.grantServices[grant.IdentifierCiba].HandleAuthenticationRequest(request)
-}
-
-func (as *AuthorizationServer) ValidateAuthenticationRequest(request *service.AuthenticationRequest) {
-
 }

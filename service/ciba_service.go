@@ -38,7 +38,7 @@ type AuthenticationRequest struct {
 
 	r *http.Request
 
-	ValidateUserCode func(code, givenCode string) bool
+	ValidateUserCode       func(code, givenCode string) bool
 	ValidateBindingMessage func(bindingMessage string) bool
 }
 
@@ -52,7 +52,7 @@ func defaultValidateBindingMessage(bindingMessage string) bool {
 
 func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest := &AuthenticationRequest{
-		ValidateUserCode: defaultValidateUserCode,
+		ValidateUserCode:       defaultValidateUserCode,
 		ValidateBindingMessage: defaultValidateBindingMessage,
 	}
 	_ = r.ParseForm()

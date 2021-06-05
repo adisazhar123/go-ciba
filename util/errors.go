@@ -21,8 +21,8 @@ const (
 	errInvalidUserCode       = "invalid_user_code"
 	errInvalidBindingMessage = "invalid_binding_message"
 	errInvalidClient         = "invalid_client"
-	errInvalidToken = "invalid_token"
-	errInsufficientScope = "insufficient_scope"
+	errInvalidToken          = "invalid_token"
+	errInsufficientScope     = "insufficient_scope"
 )
 
 var (
@@ -101,12 +101,12 @@ var (
 		ErrorDescription: "Client authentication failed (e.g., invalid client credentials, unknown client, no client authentication included, or unsupported authentication method).",
 		Code:             http.StatusUnauthorized,
 	}
-	ErrInvalidToken = &OidcError{
+	ErrInsufficientScope = &OidcError{
 		ErrorTag:         errInvalidToken,
 		ErrorDescription: "The request requires higher privileges than provided by the access token.",
 		Code:             http.StatusForbidden,
 	}
-	ErrInsufficientScope = &OidcError{
+	ErrInvalidToken = &OidcError{
 		ErrorTag:         errInsufficientScope,
 		ErrorDescription: " The access token provided is expired, revoked, or malformed.",
 		Code:             http.StatusUnauthorized,

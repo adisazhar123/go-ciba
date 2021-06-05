@@ -389,3 +389,31 @@ func (k KeyVolatileRepository) FindPrivateKeyByClientId(clientId string) (*domai
 	}
 	return nil, nil
 }
+
+type AccessTokenVolatileRepository struct {
+	data map[string]*domain.AccessToken
+}
+
+func (a *AccessTokenVolatileRepository) Create(accessToken *domain.AccessToken) error {
+	a.data[accessToken.Value] = accessToken
+	return nil
+}
+
+func (a *AccessTokenVolatileRepository) Find(accessToken string) (*domain.AccessToken, error) {
+	token := a.data[accessToken]
+	return token, nil
+}
+
+func NewAccessTokenVolatileRepository() *AccessTokenVolatileRepository {
+	return &AccessTokenVolatileRepository{
+		data: map[string]*domain.AccessToken{
+			"C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3": {
+				Value:    "C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3",
+				ClientId: "DD2CFF62-67B1-4A1C-8BAA-0A96744C6E01",
+				Expires:  int(time.Now().Unix() + 9999),
+				UserId:   "847A2D98-F88A-4109-9BD6-A1C42D799B2A",
+				Scope:    "openid email profile",
+			},
+		},
+	}
+}

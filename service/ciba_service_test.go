@@ -54,13 +54,13 @@ func (n notificationClientMock) Send(data map[string]interface{}) error {
 
 func newCibaService() *CibaService {
 	return &CibaService{
-		clientAppRepo:         test_data.NewClientApplicationVolatileRepository(),
-		userAccountRepo:       newUserAccountVolatileRepository(),
-		cibaSessionRepo:       test_data.NewCibaSessionVolatileRepository(),
-		scopeUtil:             util.ScopeUtil{},
-		authenticationContext: newAuthenticationContext(),
-		grant:                 grant.NewCibaGrant(),
-		notificationClient:    &notificationClientMock{},
+		clientAppRepo:                   test_data.NewClientApplicationVolatileRepository(),
+		userAccountRepo:                 newUserAccountVolatileRepository(),
+		cibaSessionRepo:                 test_data.NewCibaSessionVolatileRepository(),
+		scopeUtil:                       util.ScopeUtil{},
+		authenticationContext:           newAuthenticationContext(),
+		grant:                           grant.NewCibaGrant(),
+		notificationClient:              &notificationClientMock{},
 		validateClientNotificationToken: defaultValidateClientNotificationToken,
 	}
 }
@@ -514,7 +514,7 @@ func TestCibaService_ValidateAuthenticationRequestParameters_InvalidScope(t *tes
 	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
 
 	form := url.Values{}
-	form.Set("scope", test_data.ClientAppPing.Scope + " unknown")
+	form.Set("scope", test_data.ClientAppPing.Scope+" unknown")
 	form.Set("login_hint", test_data.User3.Id)
 	form.Set("binding_message", "aa-123")
 	form.Set("requested_expiry", "120")

@@ -23,6 +23,10 @@ func (a *AccessTokenVolatileRepository) Create(accessToken *domain.AccessToken) 
 	return nil
 }
 
+func (a *AccessTokenVolatileRepository) Find(accessToken string) (*domain.AccessToken, error) {
+	return nil, nil
+}
+
 func newTokenService() *TokenService {
 	return &TokenService{
 		accessTokenRepo: newAccessTokenVolatileRepository(),

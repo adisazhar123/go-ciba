@@ -10,7 +10,6 @@ import (
 
 type ResourceRequest struct {
 	accessToken string
-	scope *string
 }
 
 func getTokenFromHeader(h http.Header) string {
@@ -25,10 +24,9 @@ func getTokenFromHeader(h http.Header) string {
 	return vals[1]
 }
 
-func NewResourceRequest(r *http.Request, scope *string) *ResourceRequest {
+func NewResourceRequest(r *http.Request) *ResourceRequest {
 	return &ResourceRequest{
 		accessToken: getTokenFromHeader(r.Header),
-		scope: scope,
 	}
 }
 
@@ -38,10 +36,10 @@ type ResourceServerInterface interface {
 
 type ResourceServer struct {
 	accessTokenRepo repository.AccessTokenRepositoryInterface
-	scopeUtil util.ScopeUtil
+	scopeUtil       util.ScopeUtil
 }
 
-func (rs *ResourceServer) HandleResourceRequest(r *ResourceRequest) *util.OidcError {
+func (rs *ResourceServer) HandleResourceRequest(r *ResourceRequest, scope string) *util.OidcError {
 	token, err := rs.accessTokenRepo.Find(r.accessToken)
 	if err != nil {
 		return util.ErrGeneral
@@ -49,7 +47,7 @@ func (rs *ResourceServer) HandleResourceRequest(r *ResourceRequest) *util.OidcEr
 	if token == nil {
 		return util.ErrInvalidToken
 	}
-	if r.scope != nil && !rs.scopeUtil.ScopeExist(token.Scope, *r.scope) {
+	if scope != "" && !rs.scopeUtil.ScopeExist(token.Scope, scope) {
 		return util.ErrInsufficientScope
 	}
 	if token.IsExpired() {
