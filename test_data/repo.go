@@ -151,6 +151,8 @@ var (
 		PublicKeyUri:                    "",
 	}
 
+	ClientAppUnknown = domain.ClientApplication{}
+
 	// Users
 	User1 = domain.UserAccount{
 		Id:        "59f37eab-39a6-4e87-9dd4-2a29194f09a4",
@@ -180,6 +182,10 @@ var (
 		UserCode:  "1999",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	}
+
+	UserUnknown = domain.UserAccount{
+		Id: "18BA38A5-AABE-4EFC-A255-67B82DC3724C",
 	}
 
 	consent     = true

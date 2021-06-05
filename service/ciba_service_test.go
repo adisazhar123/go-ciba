@@ -61,6 +61,7 @@ func newCibaService() *CibaService {
 		authenticationContext: newAuthenticationContext(),
 		grant:                 grant.NewCibaGrant(),
 		notificationClient:    &notificationClientMock{},
+		validateClientNotificationToken: defaultValidateClientNotificationToken,
 	}
 }
 
@@ -97,9 +98,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_Ping(t *testing.T) {
 	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
 
 	authReq := NewAuthenticationRequest(request)
-	res, err := cs.HandleAuthenticationRequest(authReq)
-
-	authRes := res.(*AuthenticationResponse)
+	authRes, err := cs.HandleAuthenticationRequest(authReq)
 
 	assert.Empty(t, err)
 	assert.Empty(t, authRes.Interval)
@@ -128,9 +127,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_WithUserCode_Ping(t *test
 	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
 
 	authReq := NewAuthenticationRequest(request)
-	res, err := cs.HandleAuthenticationRequest(authReq)
-
-	authRes := res.(*AuthenticationResponse)
+	authRes, err := cs.HandleAuthenticationRequest(authReq)
 
 	assert.Empty(t, err)
 	assert.Empty(t, authRes.Interval)
@@ -397,6 +394,271 @@ func TestCibaService_HandleAuthenticationRequest_Invalid_WrongUserCode(t *testin
 	assert.EqualError(t, err, util.ErrInvalidUserCode.Error())
 }
 
-func TestCibaService_ValidateAuthenticationRequestParameters(t *testing.T) {
+func TestCibaService_ValidateAuthenticationRequestParameters_InvalidClientApp(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppUnknown.Id, test_data.ClientAppUnknown.Secret)
 
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppUnknown.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+	form.Set("user_code", "1234")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrUnauthorizedClient.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_IncorrectClientAppCredentials(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret+"make-it-incorrect")
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPing.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+	form.Set("user_code", "1234")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidClient.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_NotRegisteredToUseCiba(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppNotRegisteredToUseCiba.Id, test_data.ClientAppNotRegisteredToUseCiba.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppNotRegisteredToUseCiba.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+	form.Set("user_code", "1234")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrUnauthorizedClient.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_MultipleLoginHint(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPing.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("login_hint_token", test_data.User3.Id)
+	form.Set("id_token_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidRequest.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_UserNotFound(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPing.Scope)
+	form.Set("login_hint", test_data.UserUnknown.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrUnknownUserId.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_InvalidScope(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPing.Scope + " unknown")
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidScope.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_ClientNotificationTokenIsMissingWhenClientAppIsPing(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPing.Id, test_data.ClientAppPing.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPing.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidRequest.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_ClientNotificationTokenIsMissingWhenClientAppIsPush(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPush.Id, test_data.ClientAppPush.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPush.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidRequest.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_BindingMessageTooLong(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPush.Id, test_data.ClientAppPush.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPush.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123-aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidBindingMessage.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_UserCodeIsMissing(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPushUserCodeSupported.Id, test_data.ClientAppPushUserCodeSupported.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPushUserCodeSupported.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrMissingUserCode.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_UserCodeIsInvalid(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPushUserCodeSupported.Id, test_data.ClientAppPushUserCodeSupported.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPushUserCodeSupported.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+	form.Set("user_code", "1234")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.EqualError(t, err, util.ErrInvalidUserCode.Error())
+}
+
+func TestCibaService_ValidateAuthenticationRequestParameters_ShouldSucceed(t *testing.T) {
+	cs := newCibaService()
+	auth := createAuthorizationHeaderBasic(test_data.ClientAppPushUserCodeSupported.Id, test_data.ClientAppPushUserCodeSupported.Secret)
+
+	form := url.Values{}
+	form.Set("scope", test_data.ClientAppPushUserCodeSupported.Scope)
+	form.Set("login_hint", test_data.User3.Id)
+	form.Set("binding_message", "aa-123")
+	form.Set("requested_expiry", "120")
+	form.Set("client_notification_token", "41217fd5-10dc-46e8-8151-27b7edf372fa")
+	form.Set("user_code", "1999")
+
+	request, _ := http.NewRequest(http.MethodPost, "ciba.example.com/bc-authorize", strings.NewReader(form.Encode()))
+	request.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
+
+	authReq := NewAuthenticationRequest(request)
+	err := cs.ValidateAuthenticationRequestParameters(authReq)
+
+	assert.Nil(t, err)
 }
