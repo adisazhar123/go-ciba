@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash"
+	"time"
 
 	"github.com/adisazhar123/go-ciba/util"
 )
@@ -68,6 +69,11 @@ func (at *AccessToken) UnmarshalBinary(data []byte) error {
 	}
 
 	return nil
+}
+
+func (at *AccessToken) IsExpired() bool {
+	now := int(time.Now().Unix())
+	return at.Expires < now
 }
 
 func NewAccessToken(value, clientId, userId, scope string, expires int) *AccessToken {

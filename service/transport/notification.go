@@ -22,12 +22,17 @@ type NotificationInterface interface {
 type FirebaseCloudMessaging struct {
 	client    *http.Client
 	serverKey string
+	baseUrl string
 }
 
 func NewFirebaseCloudMessaging(serverKey string) *FirebaseCloudMessaging {
-	return &FirebaseCloudMessaging{client: &http.Client{
-		Timeout: 5 * time.Second,
-	}, serverKey: serverKey}
+	return &FirebaseCloudMessaging{
+		client: &http.Client{
+			Timeout: 5 * time.Second,
+		},
+		serverKey: serverKey,
+		baseUrl: "https://fcm.googleapis.com/fcm/send",
+	}
 }
 
 type fcmSendRequest struct {
@@ -49,7 +54,7 @@ func (f *FirebaseCloudMessaging) Send(data map[string]interface{}) error {
 	}
 
 	jsonBody, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPost, "https://fcm.googleapis.com/fcm/send", bytes.NewBuffer(jsonBody))
+	req, _ := http.NewRequest(http.MethodPost, f.baseUrl, bytes.NewBuffer(jsonBody))
 	req.Header.Add("Authorization", fmt.Sprintf("key=%s", f.serverKey))
 	req.Header.Add("Content-Type", "application/json")
 

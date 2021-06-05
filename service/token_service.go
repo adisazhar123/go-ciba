@@ -36,9 +36,9 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 }
 
 type TokenServiceInterface interface {
-	HandleTokenRequest(request *TokenRequest) (interface{}, *util.OidcError)
+	HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 	ValidateTokenRequest(request *TokenRequest) (interface{}, *util.OidcError)
-	GrantAccessToken(request *TokenRequest) (interface{}, *util.OidcError)
+	GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 }
 
 type TokenConfig struct {
@@ -62,15 +62,15 @@ func (t *TokenService) HandleTokenRequest(request *TokenRequest) (interface{}, *
 	return t.GrantAccessToken(request)
 }
 
-func (t *TokenService) validate(cs *domain.CibaSession) (interface{}, *util.OidcError) {
+func (t *TokenService) validate(cs *domain.CibaSession) *util.OidcError {
 	if !cs.IsValid() || cs.IsTimeExpired() {
-		return util.ErrExpiredToken, util.ErrExpiredToken
+		return util.ErrExpiredToken
 	} else if cs.IsAuthorizationPending() {
-		return util.ErrAuthorizationPending, util.ErrAuthorizationPending
+		return util.ErrAuthorizationPending
 	} else if !cs.IsConsented() {
-		return util.ErrAccessDenied, util.ErrAccessDenied
+		return util.ErrAccessDenied
 	}
-	return true, nil
+	return nil
 }
 
 type UserConsentResponse struct {
@@ -172,7 +172,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 			return nil, resp.err
 		}
 	} else if ca.TokenMode == domain.ModePing {
-		_, err := t.validate(cs)
+		err := t.validate(cs)
 		if err != nil {
 			return nil, err
 		}

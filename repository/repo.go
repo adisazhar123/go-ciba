@@ -5,6 +5,7 @@ import "github.com/adisazhar123/go-ciba/domain"
 // to store access token.
 type AccessTokenRepositoryInterface interface {
 	Create(accessToken *domain.AccessToken) error
+	Find(accessToken string) (*domain.AccessToken, error)
 }
 
 // to store ciba session.

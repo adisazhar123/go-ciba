@@ -244,23 +244,23 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	return nil
 }
 
-func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, error) {
+func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
 
 	if err != nil {
 		// not valid
-		return false, util.ErrGeneral
+		return util.ErrGeneral
 	}
 	if cibaSession == nil {
-		return false, errors.New("ciba session not found")
+		return errors.New("ciba session not found")
 	}
 
 	clientApp, err := cs.clientAppRepo.FindById(cibaSession.ClientId)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if clientApp == nil {
-		return false, errors.New("client app not found")
+		return errors.New("client app not found")
 	}
 
 	if !cibaSession.Valid || cibaSession.Consented != nil || cibaSession.IsTimeExpired() {
@@ -275,12 +275,12 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 				"client_notification_token": cibaSession.ClientNotificationToken,
 			})
 		}
-		return false, util.ErrExpiredToken
+		return util.ErrExpiredToken
 	}
 	cibaSession.Consented = request.Consented
 	if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
 		// not valid
-		return false, err
+		return err
 	}
 
 	if request.Consented != nil && *request.Consented && clientApp.TokenMode == domain.ModePush {
@@ -290,12 +290,12 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		key, err := cs.keyRepo.FindPrivateKeyByClientId(cibaSession.ClientId)
 
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		if key == nil {
 			log.Printf("%s cannot find key for client ID %s", logTag, cibaSession.ClientId)
-			return false, util.ErrInvalidGrant
+			return util.ErrInvalidGrant
 		}
 
 		extraClaims["urn:openid:params:jwt:claim:auth_req_id"] = cibaSession.AuthReqId
@@ -317,7 +317,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 
 		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
 			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
-			return false, util.ErrGeneral
+			return util.ErrGeneral
 		}
 
 		_ = cs.clientAppNotification.Send(map[string]interface{}{
@@ -336,7 +336,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 
 		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
 			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
-			return false, util.ErrGeneral
+			return util.ErrGeneral
 		}
 
 		_ = cs.clientAppNotification.Send(map[string]interface{}{
@@ -351,7 +351,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 
 		if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
 			log.Printf("[go-ciba][pushtoken] failed updating CIBA session. %s", err.Error())
-			return false, util.ErrGeneral
+			return util.ErrGeneral
 		}
 
 		_ = cs.clientAppNotification.Send(map[string]interface{}{
@@ -362,7 +362,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) (bool, erro
 		})
 	}
 
-	return true, nil
+	return nil
 }
 
 func (cs *CibaService) GetGrantIdentifier() string {
