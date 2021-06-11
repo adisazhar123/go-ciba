@@ -297,6 +297,22 @@ var (
 		LatestTokenRequestedAt: nil,
 		CreatedAt:              time.Time{},
 	}
+
+	AccessTokenExpired = domain.AccessToken{
+		Value:    "430016EA-7EE8-4855-86F6-6F6BDA3E51E8",
+		ClientId: ClientAppPush.Id,
+		Expires:  int(time.Now().AddDate(0, 0, -1).Unix()),
+		UserId:   User3.Id,
+		Scope:    "openid profile",
+	}
+
+	AccessTokenValid = domain.AccessToken{
+		Value:    "C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3",
+		ClientId: "DD2CFF62-67B1-4A1C-8BAA-0A96744C6E01",
+		Expires:  int(time.Now().Unix() + 9999),
+		UserId:   "847A2D98-F88A-4109-9BD6-A1C42D799B2A",
+		Scope:    "openid email profile chat:write",
+	}
 )
 
 // In memory mock of ClientApplicationRepositoryInterface.
@@ -407,13 +423,8 @@ func (a *AccessTokenVolatileRepository) Find(accessToken string) (*domain.Access
 func NewAccessTokenVolatileRepository() *AccessTokenVolatileRepository {
 	return &AccessTokenVolatileRepository{
 		data: map[string]*domain.AccessToken{
-			"C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3": {
-				Value:    "C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3",
-				ClientId: "DD2CFF62-67B1-4A1C-8BAA-0A96744C6E01",
-				Expires:  int(time.Now().Unix() + 9999),
-				UserId:   "847A2D98-F88A-4109-9BD6-A1C42D799B2A",
-				Scope:    "openid email profile",
-			},
+			AccessTokenValid.Value:   &AccessTokenValid,
+			AccessTokenExpired.Value: &AccessTokenExpired,
 		},
 	}
 }
