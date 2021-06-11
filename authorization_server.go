@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/adisazhar123/go-ciba/grant"
+	"github.com/adisazhar123/go-ciba/repository"
 	"github.com/adisazhar123/go-ciba/service"
 	"github.com/adisazhar123/go-ciba/util"
 )
@@ -18,6 +19,14 @@ type AuthorizationServerInterface interface {
 
 type AuthorizationServer struct {
 	grantServices map[string]service.GrantServiceInterface
+	dataStore     repository.DataStoreInterface
+}
+
+func NewAuthorizationServer(ds repository.DataStoreInterface) *AuthorizationServer {
+	return &AuthorizationServer{
+		grantServices: make(map[string]service.GrantServiceInterface),
+		dataStore:     ds,
+	}
 }
 
 func (as *AuthorizationServer) AddService(gs service.GrantServiceInterface) {
@@ -33,4 +42,11 @@ func (as *AuthorizationServer) HandleCibaRequest(request *service.Authentication
 		panic(fmt.Sprintf("grant %s doesn't exist", grant.IdentifierCiba))
 	}
 	return as.grantServices[grant.IdentifierCiba].HandleAuthenticationRequest(request)
+}
+
+func (as *AuthorizationServer) initCibaService() *service.CibaService {
+	if as.dataStore == nil {
+		panic("dataStore is null")
+	}
+	return &service.CibaService{}
 }

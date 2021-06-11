@@ -123,17 +123,39 @@ type CibaService struct {
 	authenticationContext *http_auth.ClientAuthenticationContext
 
 	clientApp *domain.ClientApplication
-	grant     grant.GrantTypeInterface
+	grant     *grant.CibaGrant
 
 	notificationClient transport.NotificationInterface
 
 	clientAppNotification transport.NotificationInterface
 
-	tokenConfig *TokenConfig
 
 	validateClientNotificationToken func(token string) bool
 
 	mutex sync.Mutex
+}
+
+func NewCibaService(
+	clientAppRepo repository.ClientApplicationRepositoryInterface,
+	userAccountRepo repository.UserAccountRepositoryInterface,
+	cibaSessionRepo repository.CibaSessionRepositoryInterface,
+	keyRepo repository.KeyRepositoryInterface,
+	notificationClient transport.NotificationInterface,
+	cibaGrant *grant.CibaGrant,
+	validateClientNotificationToken func(token string) bool,
+) *CibaService {
+	return &CibaService{
+		clientAppRepo:                   clientAppRepo,
+		userAccountRepo:                 userAccountRepo,
+		cibaSessionRepo:                 cibaSessionRepo,
+		keyRepo:                         keyRepo,
+		scopeUtil:                       util.ScopeUtil{},
+		grant:                           cibaGrant,
+		notificationClient:              notificationClient,
+		clientAppNotification:           transport.NewClientAppNotificationClient(),
+		validateClientNotificationToken: validateClientNotificationToken,
+		mutex:                           sync.Mutex{},
+	}
 }
 
 func defaultValidateClientNotificationToken(token string) bool {
@@ -147,7 +169,7 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	}
 
 	// Create new ciba session
-	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, cs.grant.(*grant.CibaGrant).PollInterval)
+	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, cs.grant.PollInterval)
 	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
 		log.Println("An error occurred", err)
 		return nil, util.ErrGeneral
@@ -300,13 +322,13 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 
 		extraClaims["urn:openid:params:jwt:claim:auth_req_id"] = cibaSession.AuthReqId
 
-		tokens := cs.grant.(*grant.CibaGrant).CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{
+		tokens := cs.grant.CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{
 			DefaultIdTokenClaims: domain.DefaultIdTokenClaims{
 				Aud:      cibaSession.ClientId,
 				AuthTime: now,
 				Iat:      now,
-				Exp:      cs.tokenConfig.IdTokenLifeTime,
-				Iss:      cs.tokenConfig.Issuer,
+				Exp:      cs.grant.Config.IdTokenLifetime,
+				Iss:      cs.grant.Config.Issuer,
 				Sub:      cibaSession.UserId,
 			},
 			AuthReqId: cibaSession.AuthReqId,
