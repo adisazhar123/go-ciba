@@ -29,3 +29,11 @@ type KeyRepositoryInterface interface {
 type UserAccountRepositoryInterface interface {
 	FindById(id string) (*domain.UserAccount, error)
 }
+
+type DataStoreInterface interface {
+	GetAccessTokenRepository() AccessTokenRepositoryInterface
+	GetCibaSessionRepository() CibaSessionRedisRepository
+	GetClientApplicationRepository() ClientApplicationRepositoryInterface
+	GetKeyRepository() KeyRepositoryInterface
+	GetUserAccountRepository() UserAccountRepositoryInterface
+}
