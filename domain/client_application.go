@@ -14,20 +14,20 @@ const (
 )
 
 type ClientApplication struct {
-	Id                              string
-	Secret                          string
-	Name                            string
-	Scope                           string
-	TokenMode                       string
-	ClientNotificationEndpoint      string
-	AuthenticationRequestSigningAlg string
-	UserCodeParameterSupported      bool
+	Id                              string `db:"id"`
+	Secret                          string `db:"secret"`
+	Name                            string `db:"name"`
+	Scope                           string `db:"scope"`
+	TokenMode                       string `db:"token_mode"`
+	ClientNotificationEndpoint      string `db:"client_notification_endpoint"`
+	AuthenticationRequestSigningAlg string `db:"authentication_request_signing_alg"`
+	UserCodeParameterSupported      bool   `db:"user_code_parameter_supported"`
 
-	RedirectUri                 string
-	TokenEndpointAuthMethod     string
-	TokenEndpointAuthSigningAlg string
-	GrantTypes                  string
-	PublicKeyUri                string
+	RedirectUri                 string `db:"redirect_uri"`
+	TokenEndpointAuthMethod     string `db:"token_endpoint_auth_method"`
+	TokenEndpointAuthSigningAlg string `db:"token_endpoint_auth_signing_alg"`
+	GrantTypes                  string `db:"grant_types"`
+	PublicKeyUri                string `db:"public_key_uri"`
 }
 
 func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, authenticationRequestSigningAlg string, userCode bool) *ClientApplication {

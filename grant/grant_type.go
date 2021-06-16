@@ -6,6 +6,6 @@ type GrantTypeInterface interface {
 
 type GrantConfig struct {
 	Issuer              string
-	IdTokenLifetime     int
-	AccessTokenLifetime int
+	IdTokenLifetime     int64
+	AccessTokenLifetime int64
 }

@@ -10,8 +10,8 @@ func TestNewCibaSession(t *testing.T) {
 	bindingMessage := "bind-123"
 	token := "someToken-8943dfgdfgdfg5"
 	scope := "openid profile Email"
-	expiresIn := 120
-	interval := 5
+	expiresIn := int64(120)
+	interval := int64(5)
 	identiferCiba := "urn:openid:params:grant-type:ciba"
 
 	ca := ClientApplication{

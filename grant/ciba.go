@@ -9,20 +9,20 @@ const (
 )
 
 var (
-	DefaultPollIntervalInSeconds        = 5
-	DefaultIdTokenLifeTimeInSeconds     = 3600
-	DefaultAccessTokenLifeTimeInSeconds = 3600
+	DefaultPollIntervalInSeconds        int64 = 5
+	DefaultIdTokenLifeTimeInSeconds     int64 = 3600
+	DefaultAccessTokenLifeTimeInSeconds int64 = 3600
 )
 
 type CibaGrantTypeInterface interface {
 	GrantTypeInterface
 
 	InitRepositories(repo1, repo2 string)
-	SetInterval(val int)
+	SetInterval(val int64)
 }
 
 type CibaGrant struct {
-	PollInterval *int
+	PollInterval *int64
 	Config       *GrantConfig
 	TokenManager domain.TokenInterface
 }
@@ -39,7 +39,7 @@ func NewCibaGrant() *CibaGrant {
 	}
 }
 
-func NewCustomCibaGrant(pollInterval *int, grantConfig *GrantConfig) *CibaGrant {
+func NewCustomCibaGrant(pollInterval *int64, grantConfig *GrantConfig) *CibaGrant {
 	return &CibaGrant{
 		PollInterval: pollInterval,
 		Config:       grantConfig,
@@ -51,7 +51,7 @@ func (cg *CibaGrant) GetIdentifier() string {
 	return IdentifierCiba
 }
 
-func (cg *CibaGrant) SetInterval(val *int) {
+func (cg *CibaGrant) SetInterval(val *int64) {
 	cg.PollInterval = val
 }
 

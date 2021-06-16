@@ -20,7 +20,8 @@ type TokenRequest struct {
 }
 
 const (
-	LogTag = "[GO-CIBA TOKEN SERVICE]"
+	LogTag  = "[GO-CIBA TOKEN SERVICE]"
+	timeout = 30
 )
 
 func NewTokenRequest(r *http.Request) *TokenRequest {
@@ -42,9 +43,9 @@ type TokenServiceInterface interface {
 }
 
 type TokenConfig struct {
-	PollingInterval     int
-	AccessTokenLifeTime int
-	IdTokenLifeTime     int
+	PollingInterval     int64
+	AccessTokenLifeTime int64
+	IdTokenLifeTime     int64
 	Issuer              string
 }
 
@@ -79,8 +80,7 @@ type UserConsentResponse struct {
 }
 
 func waitForUserConsent(response chan UserConsentResponse, authReqId string, cibaSessionRepo repository.CibaSessionRepositoryInterface) {
-	start := int(time.Now().Unix())
-	timeout := 30
+	start := util.NowInt()
 	for true {
 		cs, err := cibaSessionRepo.FindById(authReqId)
 		if err != nil {
@@ -92,7 +92,7 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 			break
 		}
 		if cs.IsAuthorizationPending() {
-			now := int(time.Now().Unix())
+			now := util.NowInt()
 			timeTaken := now - start
 			if timeTaken > timeout {
 				log.Printf("%s waiting for user consent hit timeout\n", LogTag)
@@ -102,7 +102,7 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 				}
 				break
 			}
-			time.Sleep(1)
+			time.Sleep(1 * time.Second)
 			continue
 		} else if cs.IsConsented() {
 			log.Printf("%s user has consented\n", LogTag)
@@ -146,7 +146,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 
 	// POLL method is long polling
 	if ca.TokenMode == domain.ModePoll {
-		now := int(time.Now().Unix())
+		now := util.NowInt()
 		// This CIBA session has requested a token before - not the first time.
 		if cs.LatestTokenRequestedAt != nil {
 			reqInterval := now - *cs.LatestTokenRequestedAt
@@ -202,7 +202,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 		AuthReqId: request.authReqId,
 	}, extraClaims, key.Private, key.Alg, key.ID)
 	// value, clientId, userId, scope string, expires int
-	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, now+tokens.AccessToken.ExpiresIn)
+	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, time.Unix(now+tokens.AccessToken.ExpiresIn, 0))
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {
 		log.Printf("%s cannot create access token. %s", LogTag, err.Error())
 		return nil, util.ErrGeneral

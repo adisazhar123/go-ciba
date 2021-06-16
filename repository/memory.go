@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/adisazhar123/go-ciba/domain"
@@ -98,6 +100,22 @@ func (u *userAccountRepository) FindById(id string) (*domain.UserAccount, error)
 }
 
 func NewInMemoryDataStore() *InMemoryDataStore {
+	privateKeyFile, _ := os.Open("../data/key.pem")
+	publicKeyFile, _ := os.Open("../data/public.pem")
+
+	privateKey, _ := ioutil.ReadAll(privateKeyFile)
+	publicKey, _ := ioutil.ReadAll(publicKeyFile)
+
+	clientId := "4E6E4BE4-089F-40C1-A4EE-BE40CE119AAE"
+
+	key := domain.Key{
+		ID:       "1",
+		ClientId: "unknown",
+		Alg:      "RS256",
+		Public:   string(publicKey),
+		Private:  string(privateKey),
+	}
+
 	return &InMemoryDataStore{
 		accessTokenRepo: &accessTokenRepository{
 			data: make(map[string]*domain.AccessToken),
@@ -112,8 +130,10 @@ func NewInMemoryDataStore() *InMemoryDataStore {
 			mtx:  sync.RWMutex{},
 		},
 		keyRepo: &keyRepository{
-			data: make(map[string]*domain.Key),
-			mtx:  sync.RWMutex{},
+			data: map[string]*domain.Key{
+				clientId: &key,
+			},
+			mtx: sync.RWMutex{},
 		},
 		userAccountRepo: &userAccountRepository{
 			data: make(map[string]*domain.UserAccount),
@@ -126,18 +146,18 @@ func (i *InMemoryDataStore) GetAccessTokenRepository() AccessTokenRepositoryInte
 	return i.accessTokenRepo
 }
 
-func (i *InMemoryDataStore) GetCibaSessionRepository() CibaSessionRedisRepository {
-	panic("implement me")
+func (i *InMemoryDataStore) GetCibaSessionRepository() CibaSessionRepositoryInterface {
+	return i.cibaSessionRepo
 }
 
 func (i *InMemoryDataStore) GetClientApplicationRepository() ClientApplicationRepositoryInterface {
-	panic("implement me")
+	return i.clientApplicationRepo
 }
 
 func (i *InMemoryDataStore) GetKeyRepository() KeyRepositoryInterface {
-	panic("implement me")
+	return i.keyRepo
 }
 
 func (i *InMemoryDataStore) GetUserAccountRepository() UserAccountRepositoryInterface {
-	panic("implement me")
+	return i.userAccountRepo
 }

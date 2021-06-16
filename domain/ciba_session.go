@@ -2,8 +2,10 @@ package domain
 
 import (
 	"encoding/json"
-	"github.com/adisazhar123/go-ciba/util"
+	"fmt"
 	"time"
+
+	"github.com/adisazhar123/go-ciba/util"
 )
 
 type CibaSession struct {
@@ -24,9 +26,9 @@ type CibaSession struct {
 	// For token modes ping and push.
 	ClientNotificationToken string
 	// When the Ciba session (authentication request id) will expire in seconds after the session is created.
-	ExpiresIn int
+	ExpiresIn int64
 	// The minimum interval rate for poll token requests. Only for token mode poll.
-	Interval *int
+	Interval *int64
 	// The validity of the Ciba session.
 	Valid bool
 	// The id token for this Ciba session.
@@ -39,7 +41,7 @@ type CibaSession struct {
 	// The latest time a token was requested using this Ciba session.
 	// in unix timestamp. Default Value is null, which means it hasn't
 	// requested a token yet. This is used for POLL mode only.
-	LatestTokenRequestedAt *int
+	LatestTokenRequestedAt *int64
 	// The time when this Ciba session was created.
 	CreatedAt time.Time
 }
@@ -49,9 +51,10 @@ func (cs *CibaSession) Expire() {
 }
 
 func (cs *CibaSession) IsTimeExpired() bool {
-	now := int(time.Now().Unix())
-	t := int(cs.CreatedAt.Unix()) + cs.ExpiresIn
-	return now > t
+	now := time.Now().UTC()
+	seconds, _ := time.ParseDuration(fmt.Sprintf("%ds", cs.ExpiresIn))
+	t := cs.CreatedAt.Add(seconds)
+	return now.After(t)
 }
 
 func (cs *CibaSession) IsConsented() bool {
@@ -70,7 +73,7 @@ func generateAuthReqId() string {
 	return util.GenerateRandomString()
 }
 
-func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNotificationToken, scope string, expiresIn int, interval *int) *CibaSession {
+func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNotificationToken, scope string, expiresIn int64, interval *int64) *CibaSession {
 	if clientApp.TokenMode != ModePoll {
 		interval = nil
 	}
@@ -82,7 +85,7 @@ func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNo
 		AuthReqId:               generateAuthReqId(),
 		ExpiresIn:               expiresIn,
 		Interval:                interval,
-		CreatedAt:               time.Now(),
+		CreatedAt:               time.Now().UTC(),
 	}
 }
 

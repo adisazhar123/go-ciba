@@ -47,8 +47,8 @@ func TestCibaSessionRedisRepository_Create(t *testing.T) {
 	bindingMessage := "bind-123"
 	token := "someToken-8943dfgdfgdfg5"
 	scope := "openid profile email"
-	expiresIn := 120
-	interval := 5
+	expiresIn := int64(120)
+	interval := int64(5)
 
 	ca := domain.ClientApplication{
 		Id:                              "420d637b-ff22-4e48-88fb-237aa2131e72",
@@ -85,8 +85,8 @@ func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
 		Email:     "ua@email.com",
 		Password:  "secret",
 		UserCode:  "123",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 	jsonString, _ := user.MarshalBinary()
 	redis.Set("user_account:"+userId, string(jsonString))
@@ -107,8 +107,8 @@ func TestUserAccountRedisRepository_FindById_InvalidUser(t *testing.T) {
 		Email:     "ua@email.com",
 		Password:  "secret",
 		UserCode:  "123",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 	jsonString, _ := user.MarshalBinary()
 	redis.Set("user_account:"+user.Id, string(jsonString))

@@ -9,6 +9,7 @@ import (
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/service/http_auth"
+	"github.com/adisazhar123/go-ciba/util"
 )
 
 type ClientApplicationVolatileRepository struct {
@@ -160,8 +161,8 @@ var (
 		Email:     "user-1@email.com",
 		Password:  "secret",
 		UserCode:  "",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	User2 = domain.UserAccount{
@@ -170,8 +171,8 @@ var (
 		Email:     "user-2@email.com",
 		Password:  "secret",
 		UserCode:  "",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	User3 = domain.UserAccount{
@@ -180,17 +181,17 @@ var (
 		Email:     "user-3@email.com",
 		Password:  "secret",
 		UserCode:  "1999",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	UserUnknown = domain.UserAccount{
 		Id: "18BA38A5-AABE-4EFC-A255-67B82DC3724C",
 	}
 
-	consent     = true
-	notConsent  = false
-	expiresLong = 9999999
+	consent           = true
+	notConsent        = false
+	expiresLong int64 = 9999999
 
 	CibaSession1 = domain.CibaSession{
 		AuthReqId: "8f8080f3-7b3e-4f86-af93-60fc14392008",
@@ -217,7 +218,7 @@ var (
 		ClientId:  ClientAppPing.Id,
 		ExpiresIn: 3600,
 		Valid:     true,
-		CreatedAt: time.Now().Add(-1 * time.Duration(5) * time.Hour),
+		CreatedAt: time.Now().UTC().Add(-1 * time.Duration(5) * time.Hour),
 	}
 
 	CibaSession6 = domain.CibaSession{
@@ -226,7 +227,7 @@ var (
 		ExpiresIn: expiresLong,
 		Valid:     true,
 		Consented: nil,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	CibaSession7 = domain.CibaSession{
@@ -235,7 +236,7 @@ var (
 		ExpiresIn: expiresLong,
 		Valid:     true,
 		Consented: &notConsent,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	CibaSession8 = domain.CibaSession{
@@ -244,7 +245,7 @@ var (
 		ExpiresIn: expiresLong,
 		Valid:     true,
 		Consented: &consent,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	CibaSession9 = domain.CibaSession{
@@ -253,7 +254,7 @@ var (
 		ExpiresIn: expiresLong,
 		Valid:     true,
 		Consented: &consent,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	CibaSession10 = domain.CibaSession{
@@ -263,10 +264,10 @@ var (
 		Valid:                  true,
 		Consented:              &consent,
 		LatestTokenRequestedAt: nil,
-		CreatedAt:              time.Time{},
+		CreatedAt:              time.Now().UTC(),
 	}
 
-	now = int(time.Now().Unix())
+	now = util.NowInt()
 
 	CibaSession11 = domain.CibaSession{
 		AuthReqId:              "38f2aec8-4cfc-4982-9bd7-35e09cc60916",
@@ -275,7 +276,7 @@ var (
 		Valid:                  true,
 		Consented:              nil,
 		LatestTokenRequestedAt: &now,
-		CreatedAt:              time.Time{},
+		CreatedAt:              time.Now().UTC(),
 	}
 
 	CibaSession12 = domain.CibaSession{
@@ -285,7 +286,7 @@ var (
 		Valid:                  true,
 		Consented:              nil,
 		LatestTokenRequestedAt: nil,
-		CreatedAt:              time.Time{},
+		CreatedAt:              time.Now().UTC(),
 	}
 
 	CibaSession13 = domain.CibaSession{
@@ -295,13 +296,13 @@ var (
 		Valid:                  true,
 		Consented:              &notConsent,
 		LatestTokenRequestedAt: nil,
-		CreatedAt:              time.Time{},
+		CreatedAt:              time.Now().UTC(),
 	}
 
 	AccessTokenExpired = domain.AccessToken{
 		Value:    "430016EA-7EE8-4855-86F6-6F6BDA3E51E8",
 		ClientId: ClientAppPush.Id,
-		Expires:  int(time.Now().AddDate(0, 0, -1).Unix()),
+		Expires:  time.Now().UTC().AddDate(0, 0, -1),
 		UserId:   User3.Id,
 		Scope:    "openid profile",
 	}
@@ -309,7 +310,7 @@ var (
 	AccessTokenValid = domain.AccessToken{
 		Value:    "C59D9FBC-D8E4-4B8B-A95B-14F931EE1AB3",
 		ClientId: "DD2CFF62-67B1-4A1C-8BAA-0A96744C6E01",
-		Expires:  int(time.Now().Unix() + 9999),
+		Expires:  time.Now().UTC().Add(999 * time.Second),
 		UserId:   "847A2D98-F88A-4109-9BD6-A1C42D799B2A",
 		Scope:    "openid email profile chat:write",
 	}

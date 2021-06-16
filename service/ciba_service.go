@@ -29,7 +29,7 @@ type AuthenticationRequest struct {
 	IdTokenHint             string
 	LoginHint               string
 	LoginHintToken          string
-	RequestedExpiry         int
+	RequestedExpiry         int64
 	Scope                   string
 	UserCode                string
 	Interval                int
@@ -64,7 +64,7 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest.IdTokenHint = form.Get("id_token_hint")
 	authRequest.LoginHint = form.Get("login_hint")
 	authRequest.LoginHintToken = form.Get("login_hint_token")
-	expiry, _ := strconv.Atoi(form.Get("requested_expiry"))
+	expiry, _ := strconv.ParseInt(form.Get("requested_expiry"), 10, 64)
 	authRequest.RequestedExpiry = expiry
 	authRequest.Scope = form.Get("scope")
 	authRequest.UserCode = form.Get("user_code")
@@ -91,11 +91,11 @@ func (ar *AuthenticationRequest) SetValidateBindingMessageFunction(fn func(bindi
 
 type AuthenticationResponse struct {
 	AuthReqId string `json:"auth_req_id"`
-	ExpiresIn int    `json:"expires_in"`
-	Interval  *int   `json:"interval,omitempty"`
+	ExpiresIn int64  `json:"expires_in"`
+	Interval  *int64 `json:"interval,omitempty"`
 }
 
-func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int, interval *int) *AuthenticationResponse {
+func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int64, interval *int64) *AuthenticationResponse {
 	return &AuthenticationResponse{
 		AuthReqId: authReqId,
 		ExpiresIn: expiresIn,
@@ -128,7 +128,6 @@ type CibaService struct {
 	notificationClient transport.NotificationInterface
 
 	clientAppNotification transport.NotificationInterface
-
 
 	validateClientNotificationToken func(token string) bool
 

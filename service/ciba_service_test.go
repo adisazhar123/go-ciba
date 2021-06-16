@@ -102,7 +102,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_Ping(t *testing.T) {
 
 	assert.Empty(t, err)
 	assert.Empty(t, authRes.Interval)
-	assert.Equal(t, 120, authRes.ExpiresIn)
+	assert.Equal(t, int64(120), authRes.ExpiresIn)
 	assert.NotEmpty(t, authRes.AuthReqId)
 }
 
@@ -131,7 +131,7 @@ func TestCibaService_HandleAuthenticationRequest_Valid_WithUserCode_Ping(t *test
 
 	assert.Empty(t, err)
 	assert.Empty(t, authRes.Interval)
-	assert.Equal(t, 120, authRes.ExpiresIn)
+	assert.Equal(t, int64(120), authRes.ExpiresIn)
 	assert.NotEmpty(t, authRes.AuthReqId)
 }
 

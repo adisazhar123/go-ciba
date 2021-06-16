@@ -22,11 +22,11 @@ type DefaultIdTokenClaims struct {
 	//  Audience(s) that this ID Token is intended for.
 	Aud string `json:"aud"`
 	// Expiration time on or after which the ID Token MUST NOT be accepted for processing.
-	Exp int `json:"exp"`
+	Exp int64 `json:"exp"`
 	// 	Time at which the JWT was issued.
-	Iat int `json:"iat"`
+	Iat int64 `json:"iat"`
 	// Time when the End-User authentication occurred.
-	AuthTime int `json:"auth_time"`
+	AuthTime int64 `json:"auth_time"`
 	// String Value used to associate a Client session with an ID Token, and to mitigate replay attacks.
 	Nonce string `json:"nonce"`
 
@@ -52,11 +52,11 @@ type DefaultCibaIdTokenClaims struct {
 }
 
 type AccessToken struct {
-	Value    string
-	ClientId string
-	Expires  int
-	UserId   string
-	Scope    string
+	Value    string    `db:"access_token"`
+	ClientId string    `db:"client_id"`
+	Expires  time.Time `db:"expires"`
+	UserId   string    `db:"user_id"`
+	Scope    string    `db:"scope"`
 }
 
 func (at *AccessToken) MarshalBinary() ([]byte, error) {
@@ -72,11 +72,11 @@ func (at *AccessToken) UnmarshalBinary(data []byte) error {
 }
 
 func (at *AccessToken) IsExpired() bool {
-	now := int(time.Now().Unix())
-	return at.Expires < now
+	now := time.Now().UTC()
+	return now.After(at.Expires)
 }
 
-func NewAccessToken(value, clientId, userId, scope string, expires int) *AccessToken {
+func NewAccessToken(value, clientId, userId, scope string, expires time.Time) *AccessToken {
 	return &AccessToken{
 		Value:    value,
 		ClientId: clientId,
@@ -89,7 +89,7 @@ func NewAccessToken(value, clientId, userId, scope string, expires int) *AccessT
 type AccessTokenInternal struct {
 	Value     string
 	TokenType string
-	ExpiresIn int
+	ExpiresIn int64
 }
 
 type DecodedIdToken struct {
@@ -150,5 +150,5 @@ func createTokenHash(token, alg string) string {
 	hashStr := fmt.Sprintf("%x", hashed)
 	tokenHash := hashStr[:(len(hashStr)/2)-1]
 
-	return base64.URLEncoding.EncodeToString([]byte(tokenHash))
+	return base64.StdEncoding.EncodeToString([]byte(tokenHash))
 }

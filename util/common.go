@@ -11,6 +11,6 @@ func SliceStringContains(s []string, e string) bool {
 	return false
 }
 
-func NowInt() int {
-	return int(time.Now().Unix())
+func NowInt() int64 {
+	return time.Now().UTC().Unix()
 }
