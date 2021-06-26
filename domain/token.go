@@ -150,5 +150,5 @@ func createTokenHash(token, alg string) string {
 	hashStr := fmt.Sprintf("%x", hashed)
 	tokenHash := hashStr[:(len(hashStr)/2)-1]
 
-	return base64.StdEncoding.EncodeToString([]byte(tokenHash))
+	return base64.RawURLEncoding.EncodeToString([]byte(tokenHash))
 }

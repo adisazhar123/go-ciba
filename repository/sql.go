@@ -82,8 +82,8 @@ func (c *cibaSessionSQLRepository) FindById(id string) (*domain.CibaSession, err
 }
 
 func (c *cibaSessionSQLRepository) Update(cs *domain.CibaSession) error {
-	cmd := c.db.Rebind(fmt.Sprintf("UPDATE %s SET auth_req_id = ?, client_id = ?, user_id = ?, hint = ?, binding_message = ?, client_notification_token = ?, expires_in = ?, interval = ?, valid = ?, id_token = ?, consented = ?, scope = ?, latest_token_requested_at = ?", c.tableName))
-	_, err := c.db.Exec(cmd, cs.AuthReqId, cs.ClientId, cs.UserId, cs.Hint, cs.BindingMessage, cs.ClientNotificationToken, cs.ExpiresIn, cs.Interval, cs.Valid, cs.IdToken, cs.Consented, cs.Scope, cs.LatestTokenRequestedAt)
+	cmd := c.db.Rebind(fmt.Sprintf("UPDATE %s SET client_id = ?, user_id = ?, hint = ?, binding_message = ?, client_notification_token = ?, expires_in = ?, interval = ?, valid = ?, id_token = ?, consented = ?, scope = ?, latest_token_requested_at = ? WHERE auth_req_id = ?", c.tableName))
+	_, err := c.db.Exec(cmd, cs.ClientId, cs.UserId, cs.Hint, cs.BindingMessage, cs.ClientNotificationToken, cs.ExpiresIn, cs.Interval, cs.Valid, cs.IdToken, cs.Consented, cs.Scope, cs.LatestTokenRequestedAt, cs.AuthReqId)
 	return err
 }
 

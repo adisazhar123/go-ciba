@@ -8,4 +8,5 @@ type GrantConfig struct {
 	Issuer              string
 	IdTokenLifetime     int64
 	AccessTokenLifetime int64
+	TokenEndpointUrl 	string
 }

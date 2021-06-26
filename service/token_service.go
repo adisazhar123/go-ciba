@@ -59,7 +59,7 @@ type TokenService struct {
 	grant *grant.CibaGrant
 }
 
-func (t *TokenService) HandleTokenRequest(request *TokenRequest) (interface{}, *util.OidcError) {
+func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
 	return t.GrantAccessToken(request)
 }
 

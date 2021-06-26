@@ -5,9 +5,21 @@ import (
 	"github.com/adisazhar123/go-ciba/test_data"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
+	"time"
 )
+
+type anyTime struct{}
+
+// Match satisfies sqlmock.Argument interface
+func (a anyTime) Match(v driver.Value) bool {
+	fmt.Print(v)
+	_, ok := v.(time.Time)
+	return ok
+}
 
 func TestClientApplicationSQLRepository_Register(t *testing.T) {
 	clientApp := test_data.ClientAppPing
@@ -89,6 +101,68 @@ func TestAccessTokenSQLRepository_Find(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, mockErr)
 	assert.NotNil(t, at)
+}
+
+func TestCibaSessionSQLRepository_Create(t *testing.T) {
+	cibaSession := test_data.CibaSession6
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := &cibaSessionSQLRepository{
+		db:        sqlx.NewDb(mockDb, ""),
+		tableName: "ciba_sessions",
+	}
+
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO ciba_sessions (auth_req_id, client_id, user_id, hint, binding_message, client_notification_token, expires_in, interval, valid, id_token, consented, scope, latest_token_requested_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")).
+		WithArgs(cibaSession.AuthReqId, cibaSession.ClientId, cibaSession.UserId, cibaSession.Hint, cibaSession.BindingMessage, cibaSession.ClientNotificationToken, cibaSession.ExpiresIn, cibaSession.Interval, cibaSession.Valid, cibaSession.IdToken, cibaSession.Consented, cibaSession.Scope, cibaSession.LatestTokenRequestedAt, cibaSession.CreatedAt.Format(time.RFC3339)).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := repo.Create(&cibaSession)
+	mockErr := mock.ExpectationsWereMet()
+
+	assert.NoError(t, err)
+	assert.NoError(t, mockErr)
+}
+
+func TestCibaSessionSQLRepository_FindById(t *testing.T) {
+	cibaSession := test_data.CibaSession6
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := &cibaSessionSQLRepository{
+		db:        sqlx.NewDb(mockDb, ""),
+		tableName: "ciba_sessions",
+	}
+	rows := sqlmock.NewRows([]string{"auth_req_id", "client_id", "user_id", "hint", "binding_message", "client_notification_token", "expires_in", "interval", "valid", "id_token", "consented", "scope", "latest_token_requested_at", "created_at"}).
+		AddRow(cibaSession.AuthReqId, cibaSession.ClientId, cibaSession.UserId, cibaSession.Hint, cibaSession.BindingMessage, cibaSession.ClientNotificationToken, cibaSession.ExpiresIn, cibaSession.Interval, cibaSession.Valid, cibaSession.IdToken, cibaSession.Consented, cibaSession.Scope, cibaSession.LatestTokenRequestedAt, cibaSession.CreatedAt)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM ciba_sessions WHERE auth_req_id = ?")).
+		WillReturnRows(rows)
+
+
+	cs, err := repo.FindById(cibaSession.AuthReqId)
+	mockErr := mock.ExpectationsWereMet()
+
+	assert.NoError(t, err)
+	assert.NoError(t, mockErr)
+	assert.NotNil(t, cs)
+}
+
+func TestCibaSessionSQLRepository_Update(t *testing.T) {
+	cibaSession := test_data.CibaSession6
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := &cibaSessionSQLRepository{
+		db:        sqlx.NewDb(mockDb, ""),
+		tableName: "ciba_sessions",
+	}
+
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE ciba_sessions SET client_id = ?, user_id = ?, hint = ?, binding_message = ?, client_notification_token = ?, expires_in = ?, interval = ?, valid = ?, id_token = ?, consented = ?, scope = ?, latest_token_requested_at = ? WHERE auth_req_id = ?")).
+		WithArgs(cibaSession.ClientId, cibaSession.UserId, cibaSession.Hint, cibaSession.BindingMessage, cibaSession.ClientNotificationToken, cibaSession.ExpiresIn, cibaSession.Interval, cibaSession.Valid, cibaSession.IdToken, cibaSession.Consented, cibaSession.Scope, cibaSession.LatestTokenRequestedAt, cibaSession.AuthReqId).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := repo.Update(&cibaSession)
+	mockErr := mock.ExpectationsWereMet()
+
+	assert.NoError(t, err)
+	assert.NoError(t, mockErr)
 }
 
 func TestBuildTableName(t *testing.T) {

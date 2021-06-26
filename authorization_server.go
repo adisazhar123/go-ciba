@@ -1,7 +1,6 @@
 package go_ciba
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -39,14 +38,7 @@ func (as *AuthorizationServer) AddService(gs service.GrantServiceInterface) {
 
 func (as *AuthorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) (*service.AuthenticationResponse, *util.OidcError) {
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
-		panic(fmt.Sprintf("grant %s doesn't exist", grant.IdentifierCiba))
+		return nil, util.ErrGeneral
 	}
 	return as.grantServices[grant.IdentifierCiba].HandleAuthenticationRequest(request)
-}
-
-func (as *AuthorizationServer) initCibaService() *service.CibaService {
-	if as.dataStore == nil {
-		panic("dataStore is null")
-	}
-	return &service.CibaService{}
 }

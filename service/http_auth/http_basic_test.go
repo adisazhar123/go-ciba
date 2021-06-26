@@ -9,7 +9,7 @@ import (
 )
 
 func TestHttpBasic_ValidateRequest_CorrectClientCredentials(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 
@@ -27,7 +27,7 @@ func TestHttpBasic_ValidateRequest_CorrectClientCredentials(t *testing.T) {
 }
 
 func TestHttpBasic_ValidateRequest_IncorrectClientCredentials(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 
@@ -45,7 +45,7 @@ func TestHttpBasic_ValidateRequest_IncorrectClientCredentials(t *testing.T) {
 }
 
 func TestHttpBasic_GetClientCredentials_Valid(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 	clientId := "123456"
@@ -57,12 +57,12 @@ func TestHttpBasic_GetClientCredentials_Valid(t *testing.T) {
 
 	credentials := httpBasic.getClientCredentials(req)
 
-	assert.Equal(t, clientId, credentials.ClientId)
-	assert.Equal(t, clientPassword, credentials.ClientSecret)
+	assert.Equal(t, clientId, credentials.clientId)
+	assert.Equal(t, clientPassword, credentials.clientSecret)
 }
 
 func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 	clientId := "123456"
@@ -78,7 +78,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed(t *t
 }
 
 func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed2(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 	clientId := "123456"
@@ -94,7 +94,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed2(t *
 }
 
 func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed3(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 	clientId := "123456"
@@ -110,7 +110,7 @@ func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectlyFormed3(t *
 }
 
 func TestHttpBasic_GetClientCredentials_AuthorizationValueIncorrectEncoding(t *testing.T) {
-	httpBasic := &HttpBasic{}
+	httpBasic := &httpBasic{}
 	method := "POST"
 	uri := "ciba.example.com/bc-authorize"
 	clientId := "123456"

@@ -222,12 +222,20 @@ var (
 	}
 
 	CibaSession6 = domain.CibaSession{
-		AuthReqId: "8c125df0-9079-42ca-9da8-279d6c75335d",
-		ClientId:  ClientAppPing.Id,
-		ExpiresIn: expiresLong,
-		Valid:     true,
-		Consented: nil,
-		CreatedAt: time.Now().UTC(),
+		AuthReqId:               "8c125df0-9079-42ca-9da8-279d6c75335d",
+		ClientId:                ClientAppPing.Id,
+		UserId:                  "32794A22-61E2-4C98-B26E-538B69C7AD03",
+		Hint:                    "1234",
+		BindingMessage:          "1234",
+		ClientNotificationToken: "2D03DF42-8F59-4D99-AF1D-B7D684EA1C16",
+		ExpiresIn:               expiresLong,
+		Interval:                nil,
+		Valid:                   true,
+		IdToken:                 "fake.id.token",
+		Consented:               nil,
+		Scope:                   "openid profile",
+		LatestTokenRequestedAt:  nil,
+		CreatedAt:               time.Now().UTC(),
 	}
 
 	CibaSession7 = domain.CibaSession{

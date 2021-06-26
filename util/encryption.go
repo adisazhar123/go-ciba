@@ -11,7 +11,7 @@ import (
 
 type EncryptionInterface interface {
 	Encode(payload interface{}, key, alg, keyId string) (string, error)
-	Decode(jwt interface{}, key string, allowedAlgorithms string) interface{}
+	Decode(jwt string, key string) (string, error)
 }
 
 type GoJoseEncryption struct {
@@ -21,8 +21,16 @@ func NewGoJoseEncryption() *GoJoseEncryption {
 	return &GoJoseEncryption{}
 }
 
-func (gje *GoJoseEncryption) Decode(jwt interface{}, key string, allowedAlgorithms string) interface{} {
-	panic("implement me")
+func (gje *GoJoseEncryption) Decode(serialized string, key string) (string, error) {
+	object, err := jose.ParseSigned(serialized)
+	if err != nil {
+		return "", err
+	}
+	output, err := object.Verify([]byte(key))
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
 }
 
 func (gje *GoJoseEncryption) Encode(payload interface{}, key, alg, keyId string) (string, error) {

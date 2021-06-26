@@ -2,6 +2,7 @@ package transport
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/adisazhar123/go-ciba/domain"
@@ -20,12 +21,13 @@ const (
 	idToken                 = "f0c076bb-f903-4062-a0e0-03cb33a749e3"
 	clientNotificationToken = "cb46d947-16fd-4089-8dd1-292d64a68e91"
 	endpoint                = "https://auth.go-ciba.com"
+	userId					= "123"
 )
 
 func TestFirebaseCloudMessaging_Send(t *testing.T) {
 	defer gock.Off()
 	body := &fcmSendRequest{
-		To:   firebaseToken,
+		To:   fmt.Sprintf("/topics/ciba_consent/%s", userId),
 		Data: make(map[string]interface{}),
 	}
 	body.Data["auth_req_id"] = authReqId
@@ -38,7 +40,7 @@ func TestFirebaseCloudMessaging_Send(t *testing.T) {
 	client := NewFirebaseCloudMessaging(firebaseServerKey)
 
 	err := client.Send(map[string]interface{}{
-		"to":               firebaseToken,
+		"to":               userId,
 		"data.auth_req_id": authReqId,
 	})
 
@@ -48,7 +50,7 @@ func TestFirebaseCloudMessaging_Send(t *testing.T) {
 func TestFirebaseCloudMessaging_Send_ShouldReturnError(t *testing.T) {
 	defer gock.Off()
 	body := &fcmSendRequest{
-		To:   firebaseToken,
+		To:   fmt.Sprintf("/topics/ciba_consent/%s", userId),
 		Data: make(map[string]interface{}),
 	}
 	body.Data["auth_req_id"] = authReqId
@@ -62,7 +64,7 @@ func TestFirebaseCloudMessaging_Send_ShouldReturnError(t *testing.T) {
 	client := NewFirebaseCloudMessaging(firebaseServerKey)
 
 	err := client.Send(map[string]interface{}{
-		"to":               firebaseToken,
+		"to":               userId,
 		"data.auth_req_id": authReqId,
 	})
 

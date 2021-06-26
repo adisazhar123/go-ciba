@@ -42,7 +42,7 @@ type fcmSendRequest struct {
 
 func (f *FirebaseCloudMessaging) Send(data map[string]interface{}) error {
 	body := &fcmSendRequest{
-		To:   data["to"].(string),
+		To:   fmt.Sprintf("/topics/ciba_consent/%s", data["to"].(string)),
 		Data: make(map[string]interface{}),
 	}
 

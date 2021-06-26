@@ -34,6 +34,7 @@ func NewCibaGrant() *CibaGrant {
 			Issuer:              "issuer-ciba.example.com",
 			IdTokenLifetime:     DefaultIdTokenLifeTimeInSeconds,
 			AccessTokenLifetime: DefaultAccessTokenLifeTimeInSeconds,
+			TokenEndpointUrl: "issuer-ciba.example.com/token",
 		},
 		TokenManager: domain.NewTokenManager(),
 	}

@@ -69,10 +69,13 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest.Scope = form.Get("scope")
 	authRequest.UserCode = form.Get("user_code")
 
+	// TODO: This should by dynamic, because a client will use
+	// a client authentication method, and their credentials
+	// won't always be in the header, which we assumed here is
 	credentials := http_auth.UtilGetClientCredentials(r)
 
-	authRequest.ClientId = credentials.ClientId
-	authRequest.ClientSecret = credentials.ClientSecret
+	authRequest.ClientId = credentials.GetClientId()
+	authRequest.ClientSecret = credentials.GetClientSecret()
 
 	authRequest.r = r
 
@@ -174,10 +177,8 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 		return nil, util.ErrGeneral
 	}
 
-	firebaseToken := "dPI3eiikuIOyVtqdfVsSzf:APA91bGuu6JA9ROzHXuywum7HWLTmxNmbz9y45Ma50q26sEJZ4T7LoPvqm8aiuah_MM2WhQPmbIo3h2o0FBzlJ6n1VuQdu_HXHlXexy2eUjtwuWXdWyFz3wjUeCsR7Rvn_3jqrVyp5F-"
-
 	if err := cs.notificationClient.Send(map[string]interface{}{
-		"to":               firebaseToken,
+		"to":               ciba.Hint,
 		"data.auth_req_id": ciba.AuthReqId,
 	}); err != nil {
 		log.Printf("[go-ciba][cibaservice] an error occured sending consent to user %s", err.Error())
