@@ -5,11 +5,11 @@ import (
 )
 
 type Key struct {
-	ID       string
-	ClientId string
-	Alg      string
-	Public   string
-	Private  string
+	Id       string `db:"id"`
+	ClientId string `db:"client_id"`
+	Alg      string `db:"alg"`
+	Public   string `db:"public"`
+	Private  string `db:"private"`
 }
 
 func (k *Key) MarshalBinary() ([]byte, error) {

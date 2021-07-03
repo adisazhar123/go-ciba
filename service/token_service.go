@@ -182,7 +182,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 	key, err := t.keyRepo.FindPrivateKeyByClientId(request.clientId)
 
 	if key == nil {
-		log.Printf("%s cannot find key for client ID %s", LogTag, request.clientId)
+		log.Printf("%s cannot find key for client Id %s", LogTag, request.clientId)
 		return nil, util.ErrInvalidGrant
 	}
 	// TODO: support extra claims
@@ -199,7 +199,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 			Sub:      cs.UserId,
 		},
 		AuthReqId: request.authReqId,
-	}, extraClaims, key.Private, key.Alg, key.ID)
+	}, extraClaims, key.Private, key.Alg, key.Id)
 	// value, clientId, userId, scope string, expires int
 	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, time.Unix(now+tokens.AccessToken.ExpiresIn, 0))
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {

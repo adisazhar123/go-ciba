@@ -109,7 +109,7 @@ func NewInMemoryDataStore() *InMemoryDataStore {
 	clientId := "4E6E4BE4-089F-40C1-A4EE-BE40CE119AAE"
 
 	key := domain.Key{
-		ID:       "1",
+		Id:       "1",
 		ClientId: "unknown",
 		Alg:      "RS256",
 		Public:   string(publicKey),

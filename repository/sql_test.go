@@ -1,22 +1,21 @@
 package repository
 
 import (
+	"database/sql/driver"
+	"regexp"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/adisazhar123/go-ciba/test_data"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
-	"database/sql/driver"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
 )
 
 type anyTime struct{}
 
 // Match satisfies sqlmock.Argument interface
 func (a anyTime) Match(v driver.Value) bool {
-	fmt.Print(v)
 	_, ok := v.(time.Time)
 	return ok
 }
@@ -163,6 +162,51 @@ func TestCibaSessionSQLRepository_Update(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NoError(t, mockErr)
+}
+
+func TestKeySQLRepository_FindPrivateKeyByClientId(t *testing.T) {
+	key := test_data.Key6
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := &keySQLRepository{
+		db:        sqlx.NewDb(mockDb, ""),
+		tableName: "keys",
+	}
+	rows := sqlmock.NewRows([]string{"id", "client_id", "alg", "public", "private"}).
+		AddRow(key.Id, key.ClientId, key.Alg, key.Public, key.Private)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM keys WHERE client_id = ?")).
+		WithArgs(key.ClientId).
+		WillReturnRows(rows)
+
+	keyRes, err := repo.FindPrivateKeyByClientId(key.ClientId)
+	mockErr := mock.ExpectationsWereMet()
+
+	assert.NoError(t, err)
+	assert.NoError(t, mockErr)
+	assert.NotNil(t, keyRes)
+}
+
+func TestUserAccountSQLRepository_FindById(t *testing.T) {
+	userAccount := test_data.User3
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := userAccountSQLRepository{
+		db:        sqlx.NewDb(mockDb, ""),
+		tableName: "user_accounts",
+	}
+	rows := sqlmock.NewRows([]string{"id", "name", "email", "password", "user_code", "created_at", "updated_at"}).
+		AddRow(userAccount.Id, userAccount.Name, userAccount.Email, userAccount.Password, userAccount.UserCode, userAccount.CreatedAt, userAccount.UpdatedAt)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM user_accounts WHERE id = ?")).
+		WithArgs(userAccount.Id).
+		WillReturnRows(rows)
+
+	user, err := repo.FindById(userAccount.Id)
+	mockErr := mock.ExpectationsWereMet()
+
+	assert.NoError(t, err)
+	assert.NoError(t, mockErr)
+	assert.NotNil(t, user)
 }
 
 func TestBuildTableName(t *testing.T) {

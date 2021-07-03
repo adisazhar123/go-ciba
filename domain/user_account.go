@@ -6,13 +6,13 @@ import (
 )
 
 type UserAccount struct {
-	Id        string    `json:"Id"`
-	Name      string    `json:"Name"`
-	Email     string    `json:"Email"`
-	Password  string    `json:"Password"`
-	UserCode  string    `json:"UserCode"`
-	CreatedAt time.Time `json:"CreatedAt"`
-	UpdatedAt time.Time `json:"UpdatedAt"`
+	Id        string    `db:"id"`
+	Name      string    `db:"name"`
+	Email     string    `db:"email"`
+	Password  string    `db:"password"`
+	UserCode  string    `db:"user_code"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (ua *UserAccount) MarshalBinary() ([]byte, error) {

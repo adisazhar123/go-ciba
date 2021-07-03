@@ -24,7 +24,7 @@ var (
 	publicKey, _  = ioutil.ReadAll(publicKeyFile)
 
 	Key1 = domain.Key{
-		ID:       "1",
+		Id:       "1",
 		ClientId: "unknown",
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -32,7 +32,7 @@ var (
 	}
 
 	Key2 = domain.Key{
-		ID:       "2",
+		Id:       "2",
 		ClientId: CibaSession9.ClientId,
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -40,7 +40,7 @@ var (
 	}
 
 	Key3 = domain.Key{
-		ID:       "3",
+		Id:       "3",
 		ClientId: CibaSession10.ClientId,
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -48,7 +48,7 @@ var (
 	}
 
 	Key4 = domain.Key{
-		ID:       "4",
+		Id:       "4",
 		ClientId: CibaSession11.ClientId,
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -56,7 +56,7 @@ var (
 	}
 
 	Key5 = domain.Key{
-		ID:       "5",
+		Id:       "5",
 		ClientId: CibaSession12.ClientId,
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -64,7 +64,7 @@ var (
 	}
 
 	Key6 = domain.Key{
-		ID:       "6",
+		Id:       "6",
 		ClientId: CibaSession13.ClientId,
 		Alg:      "RS256",
 		Public:   string(publicKey),
@@ -397,12 +397,12 @@ func NewKeyVolatileRepository() *KeyVolatileRepository {
 	defer publicKeyFile.Close()
 
 	return &KeyVolatileRepository{data: map[string]*domain.Key{
-		fmt.Sprintf("%s", Key1.ID): &Key1,
-		fmt.Sprintf("%s", Key2.ID): &Key2,
-		fmt.Sprintf("%s", Key3.ID): &Key3,
-		fmt.Sprintf("%s", Key4.ID): &Key4,
-		fmt.Sprintf("%s", Key5.ID): &Key5,
-		fmt.Sprintf("%s", Key6.ID): &Key6,
+		fmt.Sprintf("%s", Key1.Id): &Key1,
+		fmt.Sprintf("%s", Key2.Id): &Key2,
+		fmt.Sprintf("%s", Key3.Id): &Key3,
+		fmt.Sprintf("%s", Key4.Id): &Key4,
+		fmt.Sprintf("%s", Key5.Id): &Key5,
+		fmt.Sprintf("%s", Key6.Id): &Key6,
 	}}
 }
 

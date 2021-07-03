@@ -317,7 +317,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 		}
 
 		if key == nil {
-			log.Printf("%s cannot find key for client ID %s", logTag, cibaSession.ClientId)
+			log.Printf("%s cannot find key for client Id %s", logTag, cibaSession.ClientId)
 			return util.ErrInvalidGrant
 		}
 
@@ -333,7 +333,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 				Sub:      cibaSession.UserId,
 			},
 			AuthReqId: cibaSession.AuthReqId,
-		}, extraClaims, key.Private, key.Alg, key.ID)
+		}, extraClaims, key.Private, key.Alg, key.Id)
 
 		cibaSession.Expire()
 		cibaSession.IdToken = tokens.IdToken.Value

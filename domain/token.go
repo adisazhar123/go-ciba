@@ -19,15 +19,15 @@ type DefaultIdTokenClaims struct {
 	Iss string `json:"iss"`
 	// Subject Identifier.
 	Sub string `json:"sub"`
-	//  Audience(s) that this ID Token is intended for.
+	//  Audience(s) that this Id Token is intended for.
 	Aud string `json:"aud"`
-	// Expiration time on or after which the ID Token MUST NOT be accepted for processing.
+	// Expiration time on or after which the Id Token MUST NOT be accepted for processing.
 	Exp int64 `json:"exp"`
 	// 	Time at which the JWT was issued.
 	Iat int64 `json:"iat"`
 	// Time when the End-User authentication occurred.
 	AuthTime int64 `json:"auth_time"`
-	// String Value used to associate a Client session with an ID Token, and to mitigate replay attacks.
+	// String Value used to associate a Client session with an Id Token, and to mitigate replay attacks.
 	Nonce string `json:"nonce"`
 
 	// Optional
@@ -36,7 +36,7 @@ type DefaultIdTokenClaims struct {
 	Acr string `json:"act,omitempty"`
 	// Authentication Methods References.
 	Amr string `json:"amr,omitempty"`
-	// Authorized party - the party to which the ID Token was issued.
+	// Authorized party - the party to which the Id Token was issued.
 	Azp string `json:"azp,omitempty"`
 }
 
