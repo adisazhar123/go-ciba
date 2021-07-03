@@ -157,6 +157,7 @@ func NewCibaService(
 		clientAppNotification:           transport.NewClientAppNotificationClient(),
 		validateClientNotificationToken: validateClientNotificationToken,
 		mutex:                           sync.Mutex{},
+		authenticationContext: http_auth.NewClientAuthenticationContext(cibaGrant.Config),
 	}
 }
 

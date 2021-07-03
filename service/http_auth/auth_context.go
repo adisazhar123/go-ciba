@@ -13,6 +13,12 @@ type ClientAuthenticationContext struct {
 	grantConfig *grant.GrantConfig
 }
 
+func NewClientAuthenticationContext(grantConfig *grant.GrantConfig) *ClientAuthenticationContext {
+	return &ClientAuthenticationContext{
+		grantConfig: grantConfig,
+	}
+}
+
 const (
 	ClientSecretBasic = "client_secret_basic"
 	ClientSecretPost = "client_secret_post"
