@@ -20,8 +20,8 @@ type TokenRequest struct {
 }
 
 const (
-	LogTag  = "[GO-CIBA TOKEN SERVICE]"
-	timeout = 30
+	LogTag           = "[GO-CIBA TOKEN SERVICE]"
+	timeoutInSeconds = 30
 )
 
 func NewTokenRequest(r *http.Request) *TokenRequest {
@@ -38,7 +38,6 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 
 type TokenServiceInterface interface {
 	HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
-	ValidateTokenRequest(request *TokenRequest) (interface{}, *util.OidcError)
 	GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 }
 
@@ -93,9 +92,9 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 		}
 		if cs.IsAuthorizationPending() {
 			now := util.NowInt()
-			timeTaken := now - start
-			if timeTaken > timeout {
-				log.Printf("%s waiting for user consent hit timeout\n", LogTag)
+			timeTakenInSeconds := now - start
+			if timeTakenInSeconds > timeoutInSeconds {
+				log.Printf("%s waiting for user consent hit timeoutInSeconds\n", LogTag)
 				response <- UserConsentResponse{
 					err:    util.ErrAuthorizationPending,
 					status: false,
