@@ -48,12 +48,17 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 }
 
 type TokenServiceInterface interface {
-	HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
+	HandleTokenRequest(request *TokenRequest) (*TokenResponse, *util.OidcError)
 	GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 	ValidateTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 }
 
-type TokenConfig struct {
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType string `json:"token_type"`
+	RefreshToken *string  `json:"refresh_token"`
+	ExpiresIn int64  `json:"expires_in"`
+	IdToken string `json:"id_token"`
 }
 
 type TokenService struct {
@@ -77,6 +82,16 @@ func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, 
 	}
 }
 
+func makeSuccessfulTokenResponse(tokens *domain.Tokens) *TokenResponse {
+	return &TokenResponse{
+		AccessToken:  tokens.AccessToken.Value,
+		TokenType:    tokens.AccessToken.TokenType,
+		RefreshToken: nil,
+		ExpiresIn:    tokens.AccessToken.ExpiresIn,
+		IdToken:      tokens.IdToken.Value,
+	}
+}
+
 // This performs authentication on the client app
 func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcError {
 	ca, err := t.clientAppRepo.FindById(request.clientId)
@@ -94,11 +109,15 @@ func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcErr
 	return nil
 }
 
-func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
+func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*TokenResponse, *util.OidcError) {
 	if err := t.ValidateTokenRequest(request); err != nil {
 		return nil, err
 	}
-	return t.GrantAccessToken(request)
+	tokens, err := t.GrantAccessToken(request)
+	if err != nil {
+		return nil, err
+	}
+	return makeSuccessfulTokenResponse(tokens), nil
 }
 
 func (t *TokenService) validate(cs *domain.CibaSession) *util.OidcError {
