@@ -86,6 +86,7 @@ func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNo
 		ExpiresIn:               expiresIn,
 		Interval:                interval,
 		ClientId:                clientApp.Id,
+		Valid:                   true,
 		CreatedAt:               time.Now().UTC(),
 	}
 }
