@@ -7,6 +7,7 @@ import (
 
 type ClientAuthenticationStrategyInterface interface {
 	ValidateRequest(r *http.Request, ca *domain.ClientApplication) bool
+	GetClientCredentials(r *http.Request, clientId, clientSecret *string)
 }
 
 type httpClientCredentials struct {

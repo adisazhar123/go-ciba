@@ -16,6 +16,10 @@ type clientJwt struct {
 	authServerTokenEndpoint string
 }
 
+func (c *clientJwt) GetClientCredentials(r *http.Request, clientId, clientSecret *string) {
+	panic("implement me")
+}
+
 type claims struct {
 	Iss *string    `json:"iss"`
 	Sub *string    `json:"sub"`

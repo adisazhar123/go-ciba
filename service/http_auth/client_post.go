@@ -9,6 +9,14 @@ import (
 type clientPost struct {
 }
 
+func (c *clientPost) GetClientCredentials(r *http.Request, clientId, clientSecret *string) {
+	_ = r.ParseForm()
+	form := r.Form
+
+	*clientId = form.Get("client_id")
+	*clientSecret = form.Get("client_secret")
+}
+
 func (c *clientPost) ValidateRequest(r *http.Request, ca *domain.ClientApplication) bool {
 	_ = r.ParseForm()
 	form := r.Form

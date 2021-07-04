@@ -8,6 +8,7 @@ import (
 	"github.com/adisazhar123/go-ciba/domain"
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/repository"
+	"github.com/adisazhar123/go-ciba/service/http_auth"
 	"github.com/adisazhar123/go-ciba/util"
 )
 
@@ -17,6 +18,8 @@ type TokenRequest struct {
 	grantType    string
 	authReqId    string
 	httpMethod   string
+
+	r *http.Request
 }
 
 const (
@@ -32,6 +35,14 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 	tokenRequest.authReqId = form.Get("auth_req_id")
 	tokenRequest.grantType = form.Get("grant_type")
 	tokenRequest.httpMethod = r.Method
+	tokenRequest.r = r
+
+	for _, v := range http_auth.SupportedClientAuthentications {
+		v.GetClientCredentials(r, &tokenRequest.clientId, &tokenRequest.clientSecret)
+		if tokenRequest.clientId != "" && tokenRequest.clientSecret != "" {
+			break
+		}
+	}
 
 	return tokenRequest
 }
@@ -39,6 +50,7 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 type TokenServiceInterface interface {
 	HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 	GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError)
+	ValidateTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
 }
 
 type TokenConfig struct {
@@ -55,10 +67,43 @@ type TokenService struct {
 	keyRepo         repository.KeyRepositoryInterface
 	config          *TokenConfig
 	// TODO: support other grant types as well, not just CIBA.
-	grant *grant.CibaGrant
+	grant                 *grant.CibaGrant
+	authenticationContext *http_auth.ClientAuthenticationContext
+}
+
+func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, clientAppRepo repository.ClientApplicationRepositoryInterface, cibaSessionRepo repository.CibaSessionRepositoryInterface, keyRepo repository.KeyRepositoryInterface, config *TokenConfig, grant *grant.CibaGrant) *TokenService {
+	return &TokenService{
+		accessTokenRepo:       accessTokenRepo,
+		clientAppRepo:         clientAppRepo,
+		cibaSessionRepo:       cibaSessionRepo,
+		keyRepo:               keyRepo,
+		config:                config,
+		grant:                 grant,
+		authenticationContext: http_auth.NewClientAuthenticationContext(grant.Config),
+	}
+}
+
+// This performs authentication on the client app
+func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcError {
+	ca, err := t.clientAppRepo.FindById(request.clientId)
+	if err != nil {
+		log.Println(err)
+		return util.ErrGeneral
+	} else if ca == nil {
+		return util.ErrInvalidClient
+	}
+
+	ok := t.authenticationContext.AuthenticateClient(request.r, ca)
+	if !ok {
+		return util.ErrInvalidClient
+	}
+	return nil
 }
 
 func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
+	if err := t.ValidateTokenRequest(request); err != nil {
+		return nil, err
+	}
 	return t.GrantAccessToken(request)
 }
 

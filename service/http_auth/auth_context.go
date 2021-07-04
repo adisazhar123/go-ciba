@@ -25,6 +25,11 @@ const (
 	ClientSecretJwt   = "client_secret_jwt"
 )
 
+var SupportedClientAuthentications map[string]ClientAuthenticationStrategyInterface = map[string]ClientAuthenticationStrategyInterface{
+	ClientSecretBasic: &httpBasic{clientCredentials: &httpClientCredentials{}},
+	ClientSecretPost:  &clientPost{},
+}
+
 func (c *ClientAuthenticationContext) AuthenticateClient(r *http.Request, ca *domain.ClientApplication) bool {
 	// If no method is registered, the default method is client_secret_basic
 	switch ca.GetTokenEndpointAuthMethod() {
