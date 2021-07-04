@@ -21,7 +21,7 @@ const (
 	idToken                 = "f0c076bb-f903-4062-a0e0-03cb33a749e3"
 	clientNotificationToken = "cb46d947-16fd-4089-8dd1-292d64a68e91"
 	endpoint                = "https://auth.go-ciba.com"
-	userId					= "123"
+	userId                  = "123"
 )
 
 func TestFirebaseCloudMessaging_Send(t *testing.T) {

@@ -10,5 +10,5 @@ type GrantServiceInterface interface {
 }
 
 type ConsentServiceInterface interface {
-	HandleConsentRequest(request *ConsentRequest)
+	HandleConsentRequest(request *ConsentRequest) *util.OidcError
 }

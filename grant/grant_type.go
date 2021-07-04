@@ -5,8 +5,9 @@ type GrantTypeInterface interface {
 }
 
 type GrantConfig struct {
-	Issuer              string
-	IdTokenLifetime     int64
-	AccessTokenLifetime int64
-	TokenEndpointUrl 	string
+	Issuer                            string
+	IdTokenLifetimeInSeconds          int64
+	AccessTokenLifetimeInSeconds      int64
+	DefaultAuthReqIdLifetimeInSeconds int64
+	TokenEndpointUrl                  string
 }

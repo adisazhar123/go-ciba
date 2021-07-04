@@ -18,4 +18,3 @@ func (c *clientPost) ValidateRequest(r *http.Request, ca *domain.ClientApplicati
 
 	return ca != nil && ca.Id == clientId && ca.Secret == clientSecret
 }
-

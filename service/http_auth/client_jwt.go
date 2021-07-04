@@ -12,15 +12,15 @@ import (
 const jwtBearerAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 type clientJwt struct {
-	goJose util.EncryptionInterface
+	goJose                  util.EncryptionInterface
 	authServerTokenEndpoint string
 }
 
 type claims struct {
-	Iss *string `json:"iss"`
-	Sub *string `json:"sub"`
-	Aud *string `json:"aud"`
-	Jti *string `json:"jti"`
+	Iss *string    `json:"iss"`
+	Sub *string    `json:"sub"`
+	Aud *string    `json:"aud"`
+	Jti *string    `json:"jti"`
 	Exp *time.Time `json:"exp"`
 	Iat *time.Time `json:"iat"`
 }

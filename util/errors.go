@@ -114,6 +114,7 @@ var (
 	ErrGeneral = &OidcError{
 		ErrorTag:         "general_error",
 		ErrorDescription: "An error occurred on our end.",
+		Code:             http.StatusInternalServerError,
 	}
 )
 

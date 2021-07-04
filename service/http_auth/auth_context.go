@@ -9,7 +9,7 @@ import (
 )
 
 type ClientAuthenticationContext struct {
-	strategy ClientAuthenticationStrategyInterface
+	strategy    ClientAuthenticationStrategyInterface
 	grantConfig *grant.GrantConfig
 }
 
@@ -21,8 +21,8 @@ func NewClientAuthenticationContext(grantConfig *grant.GrantConfig) *ClientAuthe
 
 const (
 	ClientSecretBasic = "client_secret_basic"
-	ClientSecretPost = "client_secret_post"
-	ClientSecretJwt = "client_secret_jwt"
+	ClientSecretPost  = "client_secret_post"
+	ClientSecretJwt   = "client_secret_jwt"
 )
 
 func (c *ClientAuthenticationContext) AuthenticateClient(r *http.Request, ca *domain.ClientApplication) bool {
@@ -34,7 +34,7 @@ func (c *ClientAuthenticationContext) AuthenticateClient(r *http.Request, ca *do
 		c.strategy = &clientPost{}
 	case ClientSecretJwt:
 		c.strategy = &clientJwt{
-			goJose: util.NewGoJoseEncryption(),
+			goJose:                  util.NewGoJoseEncryption(),
 			authServerTokenEndpoint: c.grantConfig.TokenEndpointUrl,
 		}
 	default:

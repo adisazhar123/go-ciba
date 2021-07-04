@@ -135,7 +135,6 @@ func TestCibaSessionSQLRepository_FindById(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM ciba_sessions WHERE auth_req_id = ?")).
 		WillReturnRows(rows)
 
-
 	cs, err := repo.FindById(cibaSession.AuthReqId)
 	mockErr := mock.ExpectationsWereMet()
 

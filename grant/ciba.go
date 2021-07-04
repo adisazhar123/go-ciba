@@ -31,10 +31,11 @@ func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{
 		PollInterval: &DefaultPollIntervalInSeconds,
 		Config: &GrantConfig{
-			Issuer:              "issuer-ciba.example.com",
-			IdTokenLifetime:     DefaultIdTokenLifeTimeInSeconds,
-			AccessTokenLifetime: DefaultAccessTokenLifeTimeInSeconds,
-			TokenEndpointUrl: "issuer-ciba.example.com/token",
+			Issuer:                            "issuer-ciba.example.com",
+			IdTokenLifetimeInSeconds:          DefaultIdTokenLifeTimeInSeconds,
+			AccessTokenLifetimeInSeconds:      DefaultAccessTokenLifeTimeInSeconds,
+			TokenEndpointUrl:                  "issuer-ciba.example.com/token",
+			DefaultAuthReqIdLifetimeInSeconds: 60,
 		},
 		TokenManager: domain.NewTokenManager(),
 	}
@@ -86,7 +87,7 @@ func (cg *CibaGrant) CreateAccessTokenAndIdToken(defaultClaims domain.DefaultCib
 		AccessToken: domain.AccessTokenInternal{
 			Value:     accessToken,
 			TokenType: "bearer",
-			ExpiresIn: cg.Config.AccessTokenLifetime,
+			ExpiresIn: cg.Config.AccessTokenLifetimeInSeconds,
 		},
 	}
 }

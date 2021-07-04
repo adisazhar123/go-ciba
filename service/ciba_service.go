@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -107,8 +106,15 @@ func makeSuccessfulAuthenticationResponse(authReqId string, expiresIn int64, int
 }
 
 type ConsentRequest struct {
-	AuthReqId string `json:"auth_req_id"`
+	AuthReqId string
 	Consented *bool
+}
+
+func NewConsentRequest(authReqId string, consented *bool) *ConsentRequest {
+	return &ConsentRequest{
+		AuthReqId: authReqId,
+		Consented: consented,
+	}
 }
 
 type CibaServiceInterface interface {
@@ -157,7 +163,7 @@ func NewCibaService(
 		clientAppNotification:           transport.NewClientAppNotificationClient(),
 		validateClientNotificationToken: validateClientNotificationToken,
 		mutex:                           sync.Mutex{},
-		authenticationContext: http_auth.NewClientAuthenticationContext(cibaGrant.Config),
+		authenticationContext:           http_auth.NewClientAuthenticationContext(cibaGrant.Config),
 	}
 }
 
@@ -171,8 +177,13 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 		return nil, err
 	}
 
+	authReqIdExpiry := cs.grant.Config.DefaultAuthReqIdLifetimeInSeconds
+	if request.RequestedExpiry != authReqIdExpiry {
+		authReqIdExpiry = request.RequestedExpiry
+	}
+
 	// Create new ciba session
-	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, request.RequestedExpiry, cs.grant.PollInterval)
+	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, authReqIdExpiry, cs.grant.PollInterval)
 	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
 		log.Println("An error occurred", err)
 		return nil, util.ErrGeneral
@@ -267,23 +278,26 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 	return nil
 }
 
-func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
+//
+func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcError {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
 
 	if err != nil {
-		// not valid
+		log.Println(err)
 		return util.ErrGeneral
 	}
 	if cibaSession == nil {
-		return errors.New("ciba session not found")
+		log.Println("ciba session not found")
+		return util.ErrTransactionFailed
 	}
 
 	clientApp, err := cs.clientAppRepo.FindById(cibaSession.ClientId)
 	if err != nil {
-		return err
+		log.Println(err)
+		return util.ErrGeneral
 	}
 	if clientApp == nil {
-		return errors.New("client app not found")
+		return util.ErrInvalidClient
 	}
 
 	if !cibaSession.Valid || cibaSession.Consented != nil || cibaSession.IsTimeExpired() {
@@ -302,8 +316,8 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 	}
 	cibaSession.Consented = request.Consented
 	if err := cs.cibaSessionRepo.Update(cibaSession); err != nil {
-		// not valid
-		return err
+		log.Println(err)
+		return util.ErrGeneral
 	}
 
 	if request.Consented != nil && *request.Consented && clientApp.TokenMode == domain.ModePush {
@@ -313,7 +327,8 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 		key, err := cs.keyRepo.FindPrivateKeyByClientId(cibaSession.ClientId)
 
 		if err != nil {
-			return err
+			log.Println(err)
+			return util.ErrGeneral
 		}
 
 		if key == nil {
@@ -328,7 +343,7 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) error {
 				Aud:      cibaSession.ClientId,
 				AuthTime: now,
 				Iat:      now,
-				Exp:      cs.grant.Config.IdTokenLifetime,
+				Exp:      cs.grant.Config.IdTokenLifetimeInSeconds,
 				Iss:      cs.grant.Config.Issuer,
 				Sub:      cibaSession.UserId,
 			},

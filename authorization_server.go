@@ -2,7 +2,6 @@ package go_ciba
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/repository"
@@ -13,7 +12,8 @@ import (
 type AuthorizationServerInterface interface {
 	AddGrant(grant grant.GrantTypeInterface)
 	AddService(grantService service.GrantServiceInterface)
-	HandleCibaRequest(r http.Request) (*service.AuthenticationResponse, *util.OidcError)
+	HandleCibaRequest(request *service.AuthenticationRequest) (*service.AuthenticationResponse, *util.OidcError)
+	HandleConsentRequest(request *service.ConsentRequest) *util.OidcError
 }
 
 type AuthorizationServer struct {
@@ -40,5 +40,20 @@ func (as *AuthorizationServer) HandleCibaRequest(request *service.Authentication
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
 		return nil, util.ErrGeneral
 	}
-	return as.grantServices[grant.IdentifierCiba].HandleAuthenticationRequest(request)
+	cs, ok := as.grantServices[grant.IdentifierCiba].(service.CibaServiceInterface)
+	if !ok {
+		return nil, util.ErrGeneral
+	}
+	return cs.HandleAuthenticationRequest(request)
+}
+
+func (as *AuthorizationServer) HandleConsentRequest(request *service.ConsentRequest) *util.OidcError {
+	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
+		return util.ErrGeneral
+	}
+	cs, ok := as.grantServices[grant.IdentifierCiba].(service.CibaServiceInterface)
+	if !ok {
+		return util.ErrGeneral
+	}
+	return cs.HandleConsentRequest(request)
 }

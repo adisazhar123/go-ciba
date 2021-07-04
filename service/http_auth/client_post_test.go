@@ -13,7 +13,7 @@ import (
 
 func TestClientPost_ValidateRequest_ShouldReturnTrueWhenGivenCorrectCredentials(t *testing.T) {
 	formData := url.Values{
-		"client_id": {"id_123"},
+		"client_id":     {"id_123"},
 		"client_secret": {"secret_123"},
 	}
 	req, _ := http.NewRequest("POST", "/auth", strings.NewReader(formData.Encode()))
@@ -31,7 +31,7 @@ func TestClientPost_ValidateRequest_ShouldReturnTrueWhenGivenCorrectCredentials(
 
 func TestClientPost_ValidateRequest_ShouldReturnFalseWhenGivenIncorrectCredentials(t *testing.T) {
 	formData := url.Values{
-		"client_id": {"id_123_234234"},
+		"client_id":     {"id_123_234234"},
 		"client_secret": {"secret_123"},
 	}
 	req, _ := http.NewRequest("POST", "/auth", strings.NewReader(formData.Encode()))
