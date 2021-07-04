@@ -203,6 +203,10 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 
 	// POLL method is long polling
 	if ca.TokenMode == domain.ModePoll {
+		err := t.validate(cs)
+		if err != nil && err != util.ErrAuthorizationPending {
+			return nil, err
+		}
 		now := util.NowInt()
 		// This CIBA session has requested a token before - not the first time.
 		if cs.LatestTokenRequestedAt != nil {
