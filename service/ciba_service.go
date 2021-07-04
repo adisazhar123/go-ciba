@@ -178,7 +178,7 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	}
 
 	authReqIdExpiry := cs.grant.Config.DefaultAuthReqIdLifetimeInSeconds
-	if request.RequestedExpiry != authReqIdExpiry {
+	if request.RequestedExpiry != 0 && request.RequestedExpiry != authReqIdExpiry {
 		authReqIdExpiry = request.RequestedExpiry
 	}
 
