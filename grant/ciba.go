@@ -12,6 +12,7 @@ var (
 	DefaultPollIntervalInSeconds        int64 = 5
 	DefaultIdTokenLifeTimeInSeconds     int64 = 3600
 	DefaultAccessTokenLifeTimeInSeconds int64 = 3600
+	DefaultAuthReqIdLifetimeInSeconds	int64 = 120
 )
 
 type CibaGrantTypeInterface interface {
@@ -29,21 +30,20 @@ type CibaGrant struct {
 
 func NewCibaGrant() *CibaGrant {
 	return &CibaGrant{
-		PollInterval: &DefaultPollIntervalInSeconds,
 		Config: &GrantConfig{
-			Issuer:                            "issuer-ciba.example.com",
-			IdTokenLifetimeInSeconds:          DefaultIdTokenLifeTimeInSeconds,
-			AccessTokenLifetimeInSeconds:      DefaultAccessTokenLifeTimeInSeconds,
-			TokenEndpointUrl:                  "issuer-ciba.example.com/token",
-			DefaultAuthReqIdLifetimeInSeconds: 60,
+			IdTokenLifetimeInSeconds:     DefaultIdTokenLifeTimeInSeconds,
+			AccessTokenLifetimeInSeconds: DefaultAccessTokenLifeTimeInSeconds,
+			AuthReqIdLifetimeInSeconds:   DefaultAuthReqIdLifetimeInSeconds,
+			PollingIntervalInSeconds:     &DefaultPollIntervalInSeconds,
+			Issuer:                       "issuer-ciba.example.com",
+			TokenEndpointUrl:             "issuer-ciba.example.com/token",
 		},
 		TokenManager: domain.NewTokenManager(),
 	}
 }
 
-func NewCustomCibaGrant(pollInterval *int64, grantConfig *GrantConfig) *CibaGrant {
+func NewCustomCibaGrant(grantConfig *GrantConfig) *CibaGrant {
 	return &CibaGrant{
-		PollInterval: pollInterval,
 		Config:       grantConfig,
 		TokenManager: domain.NewTokenManager(),
 	}
@@ -53,9 +53,6 @@ func (cg *CibaGrant) GetIdentifier() string {
 	return IdentifierCiba
 }
 
-func (cg *CibaGrant) SetInterval(val *int64) {
-	cg.PollInterval = val
-}
 
 func formatCibaClaims(defaultClaims domain.DefaultCibaIdTokenClaims, extraClaims map[string]interface{}) map[string]interface{} {
 	combinedClaims := make(map[string]interface{})

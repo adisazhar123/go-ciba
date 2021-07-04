@@ -33,12 +33,6 @@ func newTokenService() *TokenService {
 		clientAppRepo:   test_data.NewClientApplicationVolatileRepository(),
 		cibaSessionRepo: test_data.NewCibaSessionVolatileRepository(),
 		keyRepo:         test_data.NewKeyVolatileRepository(),
-		config: &TokenConfig{
-			PollingInterval:     5,
-			AccessTokenLifeTime: 3600,
-			IdTokenLifeTime:     3600,
-			Issuer:              "issuer-ciba.example.com",
-		},
 		grant: grant.NewCibaGrant(),
 	}
 }

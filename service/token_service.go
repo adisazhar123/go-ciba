@@ -54,10 +54,6 @@ type TokenServiceInterface interface {
 }
 
 type TokenConfig struct {
-	PollingInterval     int64
-	AccessTokenLifeTime int64
-	IdTokenLifeTime     int64
-	Issuer              string
 }
 
 type TokenService struct {
@@ -65,19 +61,17 @@ type TokenService struct {
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
 	keyRepo         repository.KeyRepositoryInterface
-	config          *TokenConfig
 	// TODO: support other grant types as well, not just CIBA.
 	grant                 *grant.CibaGrant
 	authenticationContext *http_auth.ClientAuthenticationContext
 }
 
-func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, clientAppRepo repository.ClientApplicationRepositoryInterface, cibaSessionRepo repository.CibaSessionRepositoryInterface, keyRepo repository.KeyRepositoryInterface, config *TokenConfig, grant *grant.CibaGrant) *TokenService {
+func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, clientAppRepo repository.ClientApplicationRepositoryInterface, cibaSessionRepo repository.CibaSessionRepositoryInterface, keyRepo repository.KeyRepositoryInterface, grant *grant.CibaGrant) *TokenService {
 	return &TokenService{
 		accessTokenRepo:       accessTokenRepo,
 		clientAppRepo:         clientAppRepo,
 		cibaSessionRepo:       cibaSessionRepo,
 		keyRepo:               keyRepo,
-		config:                config,
 		grant:                 grant,
 		authenticationContext: http_auth.NewClientAuthenticationContext(grant.Config),
 	}
@@ -197,7 +191,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 
 			// Make sure that the time between the last token request
 			// and the current token request isn't too quick
-			if reqInterval < t.config.PollingInterval {
+			if t.grant.Config.PollingIntervalInSeconds != nil && reqInterval < *t.grant.Config.PollingIntervalInSeconds {
 				return nil, util.ErrSlowDown
 			}
 		}
@@ -239,13 +233,13 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 			Aud:      request.clientId,
 			AuthTime: now,
 			Iat:      now,
-			Exp:      t.config.IdTokenLifeTime,
-			Iss:      t.config.Issuer,
+			Exp:      t.grant.Config.IdTokenLifetimeInSeconds,
+			Iss:      t.grant.Config.Issuer,
 			Sub:      cs.UserId,
 		},
 		AuthReqId: request.authReqId,
 	}, extraClaims, key.Private, key.Alg, key.Id)
-	// value, clientId, userId, scope string, expires int
+
 	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, time.Unix(now+tokens.AccessToken.ExpiresIn, 0))
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {
 		log.Printf("%s cannot create access token. %s", LogTag, err.Error())

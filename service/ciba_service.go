@@ -177,13 +177,13 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 		return nil, err
 	}
 
-	authReqIdExpiry := cs.grant.Config.DefaultAuthReqIdLifetimeInSeconds
+	authReqIdExpiry := cs.grant.Config.AuthReqIdLifetimeInSeconds
 	if request.RequestedExpiry != 0 && request.RequestedExpiry != authReqIdExpiry {
 		authReqIdExpiry = request.RequestedExpiry
 	}
 
 	// Create new ciba session
-	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, authReqIdExpiry, cs.grant.PollInterval)
+	ciba := domain.NewCibaSession(cs.clientApp, request.LoginHint, request.BindingMessage, request.ClientNotificationToken, request.Scope, authReqIdExpiry, cs.grant.Config.PollingIntervalInSeconds)
 	if err := cs.cibaSessionRepo.Create(ciba); err != nil {
 		log.Println("An error occurred", err)
 		return nil, util.ErrGeneral
