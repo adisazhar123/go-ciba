@@ -11,56 +11,20 @@ An in-depth paragraph about your project and overview of use.
 
 ### Dependencies
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
+* Go 1.13 or newer
 
-### Installing
+### Step-By-Step Walkthrough
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+The following instructions will provide you to get this library up and running.
 
-### Executing program
+#### Initialize your project
 
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
+#### Define your schema
+The `go-ciba` library is storage agnostic which means that it's not tied to a vendor specific database. It can be plug and played with any database by implementing the interfaces in `repository/repo.go`. 
 
-## Help
+As of now, it comes with a prebuilt SQL and Redis implementation. For the sake of getting it up and running, we'll use the SQL implementation. 
 
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
-
-## Authors
-
-Contributors names and contact info
-
-ex. Dominique Pizzie  
-ex. [@DomPizzie](https://twitter.com/dompizzie)
-
-## Version History
-
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
-## Acknowledgments
-
-Inspiration, code snippets, etc.
-* [bshaffer/oauth2-server-php](https://github.com/bshaffer/oauth2-server-php)
-* [ory/fosite](https://github.com/ory/fosite)
-
-
-### SQL Table Structure
+Use the following schema to create the database.
 ```sql
 CREATE TABLE ciba_sessions (
     auth_req_id VARCHAR(255) PRIMARY KEY,
@@ -129,3 +93,50 @@ CREATE TABLE user_accounts (
     updated_at TIMESTAMP
 );
 ```
+#### Boostrap the CIBA server
+We need create and configure our authorization server.
+
+`main.go`
+```go
+// replace this with your own credentials
+db, err := sql.Open("postgres", "host=localhost port=5432 user=user password=123 dbname=ciba sslmode=disable")
+if err != nil {
+    panic(err)
+}
+defer db.Close()
+
+// third parameter is the prefix of the tables created
+// since we didn't give it a prefix, we can pass in an
+// empty string
+// e.g. if we created the tables with 'my_app' prefix => my_app_access_tokens, my_app_user_accounts etc we can pass in 'my_app' as the third parameter
+
+ds := go_ciba.NewSQLDataStore(db, "postgres", "")
+
+```
+
+
+## Help
+
+Any advise for common problems or issues.
+```
+command to run if program contains helper info
+```
+
+## Authors 
+- [Adis Azhar](https://github.com/adisazhar123)
+
+## Version History
+
+* 0.1
+    * Initial Release
+
+## License
+
+This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
+
+## Acknowledgments
+
+Inspiration, code snippets, etc.
+* [bshaffer/oauth2-server-php](https://github.com/bshaffer/oauth2-server-php)
+* [ory/fosite](https://github.com/ory/fosite)
+

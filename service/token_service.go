@@ -263,7 +263,7 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 		AuthReqId: request.authReqId,
 	}, extraClaims, key.Private, key.Alg, key.Id)
 
-	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.UserId, cs.Scope, time.Unix(now+tokens.AccessToken.ExpiresIn, 0))
+	accessToken := domain.NewAccessToken(tokens.AccessToken.Value, request.clientId, cs.Hint, cs.Scope, time.Unix(now+tokens.AccessToken.ExpiresIn, 0))
 	if err := t.accessTokenRepo.Create(accessToken); err != nil {
 		log.Printf("%s cannot create access token. %s", LogTag, err.Error())
 		return nil, util.ErrGeneral
