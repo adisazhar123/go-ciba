@@ -21,6 +21,7 @@ jobs:
           key: go-mod-{{ checksum "go.sum" }}
           paths:
             - /go/pkg/mod
+            - ~/repo
       - run:
           name: Run tests
           command: |
