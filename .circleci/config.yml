@@ -44,3 +44,4 @@ workflows:
     jobs:
       - test
       - after_test
+          requires: test
