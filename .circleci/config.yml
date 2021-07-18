@@ -18,7 +18,7 @@ jobs:
           name: Install Dependencies
           command: go mod download
       - save_cache:
-          key: go-mod-{{ sdf }}
+          key: go-mod-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /go/pkg/mod
             - ~/repo
