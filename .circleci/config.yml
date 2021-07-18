@@ -22,7 +22,7 @@ jobs:
       - save_cache:
           key: repo-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - "/go/pkg/mod"
+            - ~/repo
   test:
     executor: go-executor
     steps:
