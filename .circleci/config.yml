@@ -28,9 +28,22 @@ jobs:
             gotestsum --junitfile /tmp/test-reports/unit-tests.xml
       - store_test_results:
           path: /tmp/test-reports
+  after_test:
+    executor: go-executor
+    steps:
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
+      - run:
+          name: see wd
+          command: pwd
+      - run:
+          name: see ls
+          command: ls
 
 workflows:
   version: 2
   build:
     jobs:
       - test
+      - after_test
