@@ -25,9 +25,9 @@ jobs:
           name: Run tests
           command: |
             mkdir -p /tmp/test-reports
-            gotestsum --junitfile /tmp/test-reports/gotestsum/unit-tests.xml
+            gotestsum --junitfile /tmp/test-reports/unit-tests.xml
       - store_test_results:
-          path: /tmp/test-reports/gotestsum
+          path: /tmp/test-reports
 
 workflows:
   version: 2
