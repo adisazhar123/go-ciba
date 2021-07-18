@@ -1,6 +1,10 @@
 package service
 
 import (
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/adisazhar123/go-ciba/domain"
@@ -33,7 +37,7 @@ func newTokenService() *TokenService {
 		clientAppRepo:   test_data.NewClientApplicationVolatileRepository(),
 		cibaSessionRepo: test_data.NewCibaSessionVolatileRepository(),
 		keyRepo:         test_data.NewKeyVolatileRepository(),
-		grant: grant.NewCibaGrant(),
+		grant:           grant.NewCibaGrant(),
 	}
 }
 
@@ -194,4 +198,60 @@ func TestTokenService_GrantAccessToken_ShouldReturnErrorAccessDenied_WhenClientA
 	})
 
 	assert.EqualError(t, err, util.ErrAccessDenied.Error())
+}
+
+func TestNewTokenRequest_ShouldPopulateIdAndSecretGivenHttpBasicAuthentication(t *testing.T) {
+	clientId := "id"
+	clientSecret := "secret"
+	formData := url.Values{
+		"auth_req_id": {"123123"},
+		"grant_type":  {grant.IdentifierCiba},
+	}
+	request, _ := http.NewRequest(http.MethodPost, "/token", strings.NewReader(formData.Encode()))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(formData.Encode())))
+	request.SetBasicAuth(clientId, clientSecret)
+
+	tokenRequest := NewTokenRequest(request)
+
+	assert.Equal(t, clientId, tokenRequest.clientId)
+	assert.Equal(t, clientSecret, tokenRequest.clientSecret)
+}
+
+func TestNewTokenRequest_ShouldPopulateIdAndSecretGivenClientPostAuthentication(t *testing.T) {
+	clientId := "id"
+	clientSecret := "secret"
+	formData := url.Values{
+		"auth_req_id":   {"123123"},
+		"grant_type":    {grant.IdentifierCiba},
+		"client_id":     {clientId},
+		"client_secret": {clientSecret},
+	}
+	request, _ := http.NewRequest(http.MethodPost, "/token", strings.NewReader(formData.Encode()))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(formData.Encode())))
+
+	tokenRequest := NewTokenRequest(request)
+
+	assert.Equal(t, clientId, tokenRequest.clientId)
+	assert.Equal(t, clientSecret, tokenRequest.clientSecret)
+}
+
+func TestNewTokenRequest_ShouldNotPopulateGivenUnknownClientAuthentication(t *testing.T) {
+	clientId := "id"
+	clientSecret := "secret"
+	formData := url.Values{
+		"auth_req_id":     {"123123"},
+		"grant_type":      {grant.IdentifierCiba},
+		"client_iddd":     {clientId},
+		"client_secrettt": {clientSecret},
+	}
+	request, _ := http.NewRequest(http.MethodPost, "/token", strings.NewReader(formData.Encode()))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Content-Length", strconv.Itoa(len(formData.Encode())))
+
+	tokenRequest := NewTokenRequest(request)
+
+	assert.Empty(t, tokenRequest.clientId)
+	assert.Empty(t, tokenRequest.clientSecret)
 }

@@ -208,6 +208,49 @@ func TestUserAccountSQLRepository_FindById(t *testing.T) {
 	assert.NotNil(t, user)
 }
 
+func TestUserClaimSQLRepository_GetUserClaims(t *testing.T) {
+	userAccount := test_data.User3
+	mockDb, mock, _ := sqlmock.New()
+	defer mockDb.Close()
+	repo := userClaimSQLRepository{
+		db:                   sqlx.NewDb(mockDb, ""),
+		tableNameScopes:      "scopes",
+		tableNameClaims:      "claims",
+		tableNameUsers:       "user_accounts",
+		tableNameScopeClaims: "scope_claims",
+	}
+
+	userRows := sqlmock.NewRows([]string{"id", "name", "email", "password", "user_code", "created_at", "updated_at"}).
+		AddRow(userAccount.Id, userAccount.Name, userAccount.Email, userAccount.Password, userAccount.UserCode, userAccount.CreatedAt, userAccount.UpdatedAt)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM user_accounts WHERE id = ? LIMIT 1")).
+		WithArgs(userAccount.Id).
+		WillReturnRows(userRows)
+
+	// scopeIdSql := u.db.Rebind(fmt.Sprintf("SELECT id FROM %s WHERE name = ? LIMIT 1", u.tableNameScopes))
+	scopeRows := sqlmock.NewRows([]string{"id"}).
+		AddRow("id.timestamp.read")
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM scopes WHERE name = ? LIMIT 1")).
+		WithArgs("timestamp.read").
+		WillReturnRows(scopeRows)
+	claimsRows := sqlmock.NewRows([]string{"name"}).
+		AddRow("created_at").
+		AddRow("updated_at")
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT name FROM claims WHERE id IN (SELECT id in scope_claims WHERE scope_id = ?)")).
+		WithArgs("id.timestamp.read").
+		WillReturnRows(claimsRows)
+
+	claims, err := repo.GetUserClaims(userAccount.Id, "timestamp.read")
+	mockErr := mock.ExpectationsWereMet()
+
+	for _, c := range []string{"created_at", "updated_at"} {
+		v, ok := claims[c]
+		assert.True(t, ok)
+		assert.NotNil(t, v)
+	}
+	assert.Nil(t, err)
+	assert.Nil(t, mockErr)
+}
+
 func TestBuildTableName(t *testing.T) {
 	var res string
 	res = buildTableName("", "mytable")

@@ -12,7 +12,7 @@ var (
 	DefaultPollIntervalInSeconds        int64 = 5
 	DefaultIdTokenLifeTimeInSeconds     int64 = 3600
 	DefaultAccessTokenLifeTimeInSeconds int64 = 3600
-	DefaultAuthReqIdLifetimeInSeconds	int64 = 120
+	DefaultAuthReqIdLifetimeInSeconds   int64 = 120
 )
 
 type CibaGrantTypeInterface interface {
@@ -52,7 +52,6 @@ func NewCustomCibaGrant(grantConfig *GrantConfig) *CibaGrant {
 func (cg *CibaGrant) GetIdentifier() string {
 	return IdentifierCiba
 }
-
 
 func formatCibaClaims(defaultClaims domain.DefaultCibaIdTokenClaims, extraClaims map[string]interface{}) map[string]interface{} {
 	combinedClaims := make(map[string]interface{})

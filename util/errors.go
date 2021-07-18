@@ -23,6 +23,7 @@ const (
 	errInvalidClient         = "invalid_client"
 	errInvalidToken          = "invalid_token"
 	errInsufficientScope     = "insufficient_scope"
+	errUnsupportedGrantType  = "unsupported_grant_type"
 )
 
 var (
@@ -108,8 +109,13 @@ var (
 	}
 	ErrInvalidToken = &OidcError{
 		ErrorTag:         errInsufficientScope,
-		ErrorDescription: " The access token provided is expired, revoked, or malformed.",
+		ErrorDescription: "The access token provided is expired, revoked, or malformed.",
 		Code:             http.StatusUnauthorized,
+	}
+	ErrUnsupportedGrantType = &OidcError{
+		ErrorTag:         errUnsupportedGrantType,
+		ErrorDescription: "The authorization grant type is not supported by the authorization server.",
+		Code:             http.StatusBadRequest,
 	}
 	ErrGeneral = &OidcError{
 		ErrorTag:         "general_error",

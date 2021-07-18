@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/adisazhar123/go-ciba/domain"
@@ -22,7 +23,7 @@ func (c *clientApplicationSQLRepository) Register(ca *domain.ClientApplication) 
 
 func (c *clientApplicationSQLRepository) FindById(id string) (*domain.ClientApplication, error) {
 	var clientApp domain.ClientApplication
-	cmd := c.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE id = ?", c.tableName))
+	cmd := c.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1", c.tableName))
 	err := c.db.Get(&clientApp, cmd, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -46,7 +47,7 @@ func (a *accessTokenSQLRepository) Create(at *domain.AccessToken) error {
 
 func (a *accessTokenSQLRepository) Find(at string) (*domain.AccessToken, error) {
 	var accessToken domain.AccessToken
-	cmd := a.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE access_token = ?", a.tableName))
+	cmd := a.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE access_token = ? LIMIT 1", a.tableName))
 	err := a.db.Get(&accessToken, cmd, at)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -70,7 +71,7 @@ func (c *cibaSessionSQLRepository) Create(cs *domain.CibaSession) error {
 
 func (c *cibaSessionSQLRepository) FindById(id string) (*domain.CibaSession, error) {
 	var cibaSession domain.CibaSession
-	cmd := c.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE auth_req_id = ?", c.tableName))
+	cmd := c.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE auth_req_id = ? LIMIT 1", c.tableName))
 	err := c.db.Get(&cibaSession, cmd, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -94,7 +95,7 @@ type keySQLRepository struct {
 
 func (k *keySQLRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
 	var key domain.Key
-	cmd := k.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE client_id = ?", k.tableName))
+	cmd := k.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE client_id = ? LIMIT 1", k.tableName))
 	err := k.db.Get(&key, cmd, clientId)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -112,7 +113,7 @@ type userAccountSQLRepository struct {
 
 func (u *userAccountSQLRepository) FindById(id string) (*domain.UserAccount, error) {
 	var user domain.UserAccount
-	cmd := u.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE id = ?", u.tableName))
+	cmd := u.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1", u.tableName))
 	err := u.db.Get(&user, cmd, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -121,6 +122,69 @@ func (u *userAccountSQLRepository) FindById(id string) (*domain.UserAccount, err
 		return nil, err
 	}
 	return &user, nil
+}
+
+type userClaimSQLRepository struct {
+	db *sqlx.DB
+	tableNameScopes string
+	tableNameClaims string
+	tableNameUsers string
+	tableNameScopeClaims string
+}
+
+func (u *userClaimSQLRepository) GetUserClaims(userId, scopes string) (map[string]interface{}, error) {
+	userDetails := make(map[string]interface{})
+	userDetailsSql := u.db.Rebind(fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1", u.tableNameUsers))
+	rows, err := u.db.Queryx(userDetailsSql, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return map[string]interface{}{}, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		err = rows.MapScan(userDetails)
+	}
+
+	var claims []domain.Claim
+	scopesArr := strings.Split(scopes, " ")
+
+	for _, scope := range scopesArr {
+		var scopeId string
+		scopeIdSql := u.db.Rebind(fmt.Sprintf("SELECT id FROM %s WHERE name = ? LIMIT 1", u.tableNameScopes))
+		err = u.db.Get(&scopeId, scopeIdSql, scope)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				continue
+			}
+			return nil, err
+		}
+
+		var tempClaims []domain.Claim
+		claimsSql := u.db.Rebind(fmt.Sprintf("SELECT name FROM %s WHERE id IN (SELECT id in %s WHERE scope_id = ?)", u.tableNameClaims, u.tableNameScopeClaims))
+
+		err = u.db.Select(&tempClaims, claimsSql, scopeId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				continue
+			}
+			return nil, err
+		}
+		claims = append(claims, tempClaims...)
+	}
+
+
+	claimsValues := make(map[string]interface{})
+
+	for _, claim := range claims {
+		val, ok := userDetails[claim.Str()]
+		if ok {
+			claimsValues[claim.Str()] = val
+		}
+	}
+
+	return claimsValues, nil
 }
 
 type SQLDataStore struct {

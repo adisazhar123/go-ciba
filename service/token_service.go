@@ -54,11 +54,11 @@ type TokenServiceInterface interface {
 }
 
 type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType string `json:"token_type"`
-	RefreshToken *string  `json:"refresh_token"`
-	ExpiresIn int64  `json:"expires_in"`
-	IdToken string `json:"id_token"`
+	AccessToken  string  `json:"access_token"`
+	TokenType    string  `json:"token_type"`
+	RefreshToken *string `json:"refresh_token"`
+	ExpiresIn    int64   `json:"expires_in"`
+	IdToken      string  `json:"id_token"`
 }
 
 type TokenService struct {
@@ -94,6 +94,9 @@ func makeSuccessfulTokenResponse(tokens *domain.Tokens) *TokenResponse {
 
 // This performs authentication on the client app
 func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcError {
+	if request.grantType != grant.IdentifierCiba {
+		return util.ErrUnsupportedGrantType
+	}
 	ca, err := t.clientAppRepo.FindById(request.clientId)
 	if err != nil {
 		log.Println(err)

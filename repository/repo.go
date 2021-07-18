@@ -39,6 +39,10 @@ type UserAccountRepositoryInterface interface {
 	FindById(id string) (*domain.UserAccount, error)
 }
 
+type UserClaimRepositoryInterface interface {
+	GetUserClaims(userId, scopes string) map[string]interface{}
+}
+
 type DataStoreInterface interface {
 	GetAccessTokenRepository() AccessTokenRepositoryInterface
 	GetCibaSessionRepository() CibaSessionRepositoryInterface
