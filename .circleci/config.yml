@@ -15,12 +15,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
+            - repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Install Dependencies
           command: go mod download
       - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
+          key: repo-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - "/go/pkg/mod"
   test:
@@ -28,7 +28,7 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
+            - repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run tests
           command: |
