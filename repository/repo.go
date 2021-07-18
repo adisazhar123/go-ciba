@@ -49,4 +49,5 @@ type DataStoreInterface interface {
 	GetClientApplicationRepository() ClientApplicationRepositoryInterface
 	GetKeyRepository() KeyRepositoryInterface
 	GetUserAccountRepository() UserAccountRepositoryInterface
+	GetUserClaimRepository() UserClaimRepositoryInterface
 }

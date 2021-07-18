@@ -34,12 +34,12 @@ type ResourceServerInterface interface {
 	HandleResourceRequest(r *ResourceRequest) error
 }
 
-type ResourceServer struct {
+type resourceServer struct {
 	accessTokenRepo repository.AccessTokenRepositoryInterface
 	scopeUtil       util.ScopeUtil
 }
 
-func (rs *ResourceServer) HandleResourceRequest(r *ResourceRequest, scope string) *util.OidcError {
+func (rs *resourceServer) HandleResourceRequest(r *ResourceRequest, scope string) *util.OidcError {
 	token, err := rs.accessTokenRepo.Find(r.accessToken)
 	if err != nil {
 		return util.ErrGeneral

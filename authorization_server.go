@@ -16,19 +16,19 @@ type AuthorizationServerInterface interface {
 	HandleConsentRequest(request *service.ConsentRequest) *util.OidcError
 }
 
-type AuthorizationServer struct {
+type authorizationServer struct {
 	grantServices map[string]service.GrantServiceInterface
 	dataStore     repository.DataStoreInterface
 }
 
-func NewAuthorizationServer(ds repository.DataStoreInterface) *AuthorizationServer {
-	return &AuthorizationServer{
+func NewAuthorizationServer(ds repository.DataStoreInterface) *authorizationServer {
+	return &authorizationServer{
 		grantServices: make(map[string]service.GrantServiceInterface),
 		dataStore:     ds,
 	}
 }
 
-func (as *AuthorizationServer) AddService(gs service.GrantServiceInterface) {
+func (as *authorizationServer) AddService(gs service.GrantServiceInterface) {
 	_, exist := as.grantServices[gs.GetGrantIdentifier()]
 	if !exist {
 		as.grantServices[gs.GetGrantIdentifier()] = gs
@@ -36,7 +36,7 @@ func (as *AuthorizationServer) AddService(gs service.GrantServiceInterface) {
 	}
 }
 
-func (as *AuthorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) (*service.AuthenticationResponse, *util.OidcError) {
+func (as *authorizationServer) HandleCibaRequest(request *service.AuthenticationRequest) (*service.AuthenticationResponse, *util.OidcError) {
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
 		return nil, util.ErrGeneral
 	}
@@ -47,7 +47,7 @@ func (as *AuthorizationServer) HandleCibaRequest(request *service.Authentication
 	return cs.HandleAuthenticationRequest(request)
 }
 
-func (as *AuthorizationServer) HandleConsentRequest(request *service.ConsentRequest) *util.OidcError {
+func (as *authorizationServer) HandleConsentRequest(request *service.ConsentRequest) *util.OidcError {
 	if _, exist := as.grantServices[grant.IdentifierCiba]; !exist {
 		return util.ErrGeneral
 	}

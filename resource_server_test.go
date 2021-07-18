@@ -9,7 +9,7 @@ import (
 )
 
 func TestResourceServer_HandleResourceRequest_ShouldReturnErrInvalidToken(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}
@@ -24,7 +24,7 @@ func TestResourceServer_HandleResourceRequest_ShouldReturnErrInvalidToken(t *tes
 }
 
 func TestResourceServer_HandleResourceRequest_ShouldReturnErrInsufficientScope(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}
@@ -37,7 +37,7 @@ func TestResourceServer_HandleResourceRequest_ShouldReturnErrInsufficientScope(t
 }
 
 func TestResourceServer_HandleResourceRequest_ShouldReturnErrInsufficientScope2(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}
@@ -50,7 +50,7 @@ func TestResourceServer_HandleResourceRequest_ShouldReturnErrInsufficientScope2(
 }
 
 func TestResourceServer_HandleResourceRequest_ShouldReturnErrInvalidTokenWhenExpired(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}
@@ -63,7 +63,7 @@ func TestResourceServer_HandleResourceRequest_ShouldReturnErrInvalidTokenWhenExp
 }
 
 func TestResourceServer_HandleResourceRequest_ShouldSucceedWhenTokenIsValid(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}
@@ -75,7 +75,7 @@ func TestResourceServer_HandleResourceRequest_ShouldSucceedWhenTokenIsValid(t *t
 }
 
 func TestResourceServer_HandleResourceRequest_ShouldSucceedWhenTokenIsValid_CustomScope(t *testing.T) {
-	rs := &ResourceServer{
+	rs := &resourceServer{
 		accessTokenRepo: test_data.NewAccessTokenVolatileRepository(),
 		scopeUtil:       util.ScopeUtil{},
 	}

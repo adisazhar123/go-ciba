@@ -32,8 +32,8 @@ type AuthenticationRequest struct {
 	Scope                   string
 	UserCode                string
 	Interval                int
-
-	request string // holds signed request content
+	// holds signed request content
+	request string
 
 	r *http.Request
 
@@ -67,16 +67,9 @@ func NewAuthenticationRequest(r *http.Request) *AuthenticationRequest {
 	authRequest.RequestedExpiry = expiry
 	authRequest.Scope = form.Get("scope")
 	authRequest.UserCode = form.Get("user_code")
-
-	// TODO: This should by dynamic, because a client will use
-	// a client authentication method, and their credentials
-	// won't always be in the header, which we assumed here is
-	credentials := http_auth.UtilGetClientCredentials(r)
-
-	authRequest.ClientId = credentials.GetClientId()
-	authRequest.ClientSecret = credentials.GetClientSecret()
-
 	authRequest.r = r
+
+	http_auth.PopulateClientCredentials(r, &authRequest.ClientId, &authRequest.ClientSecret)
 
 	return authRequest
 }
@@ -122,11 +115,12 @@ type CibaServiceInterface interface {
 	ConsentServiceInterface
 }
 
-type CibaService struct {
+type cibaService struct {
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	userAccountRepo repository.UserAccountRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
 	keyRepo         repository.KeyRepositoryInterface
+	userClaimRepo   repository.UserClaimRepositoryInterface
 
 	scopeUtil             util.ScopeUtil
 	authenticationContext *http_auth.ClientAuthenticationContext
@@ -148,15 +142,17 @@ func NewCibaService(
 	userAccountRepo repository.UserAccountRepositoryInterface,
 	cibaSessionRepo repository.CibaSessionRepositoryInterface,
 	keyRepo repository.KeyRepositoryInterface,
+	userClaimRepo repository.UserClaimRepositoryInterface,
 	notificationClient transport.NotificationInterface,
 	cibaGrant *grant.CibaGrant,
 	validateClientNotificationToken func(token string) bool,
-) *CibaService {
-	return &CibaService{
+) *cibaService {
+	return &cibaService{
 		clientAppRepo:                   clientAppRepo,
 		userAccountRepo:                 userAccountRepo,
 		cibaSessionRepo:                 cibaSessionRepo,
 		keyRepo:                         keyRepo,
+		userClaimRepo: userClaimRepo,
 		scopeUtil:                       util.ScopeUtil{},
 		grant:                           cibaGrant,
 		notificationClient:              notificationClient,
@@ -171,7 +167,7 @@ func defaultValidateClientNotificationToken(token string) bool {
 	return token != ""
 }
 
-func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (*AuthenticationResponse, *util.OidcError) {
+func (cs *cibaService) HandleAuthenticationRequest(request *AuthenticationRequest) (*AuthenticationResponse, *util.OidcError) {
 	err := cs.ValidateAuthenticationRequestParameters(request)
 	if err != nil {
 		return nil, err
@@ -200,7 +196,7 @@ func (cs *CibaService) HandleAuthenticationRequest(request *AuthenticationReques
 	return makeSuccessfulAuthenticationResponse(ciba.AuthReqId, ciba.ExpiresIn, ciba.Interval), nil
 }
 
-func (cs *CibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) *util.OidcError {
+func (cs *cibaService) ValidateAuthenticationRequestParameters(request *AuthenticationRequest) *util.OidcError {
 	// Make sure client application exists
 	clientApp, err := cs.clientAppRepo.FindById(request.ClientId)
 	if err != nil {
@@ -279,7 +275,7 @@ func (cs *CibaService) ValidateAuthenticationRequestParameters(request *Authenti
 }
 
 //
-func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcError {
+func (cs *cibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcError {
 	cibaSession, err := cs.cibaSessionRepo.FindById(request.AuthReqId)
 
 	if err != nil {
@@ -337,6 +333,10 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcE
 		}
 
 		extraClaims["urn:openid:params:jwt:claim:auth_req_id"] = cibaSession.AuthReqId
+		claims := cs.userClaimRepo.GetUserClaims(cibaSession.UserId, cibaSession.Scope)
+		for k, v := range claims {
+			extraClaims[k] = v
+		}
 
 		tokens := cs.grant.CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{
 			DefaultIdTokenClaims: domain.DefaultIdTokenClaims{
@@ -403,6 +403,6 @@ func (cs *CibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcE
 	return nil
 }
 
-func (cs *CibaService) GetGrantIdentifier() string {
+func (cs *cibaService) GetGrantIdentifier() string {
 	return cs.grant.GetIdentifier()
 }

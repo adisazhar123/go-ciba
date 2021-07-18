@@ -79,6 +79,7 @@ func NewCibaSession(clientApp *ClientApplication, hint, bindingMessage, clientNo
 	}
 	return &CibaSession{
 		Hint:                    hint,
+		UserId: hint,
 		ClientNotificationToken: clientNotificationToken,
 		Scope:                   scope,
 		BindingMessage:          bindingMessage,

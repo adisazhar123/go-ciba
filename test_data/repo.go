@@ -12,7 +12,7 @@ import (
 	"github.com/adisazhar123/go-ciba/util"
 )
 
-type ClientApplicationVolatileRepository struct {
+type clientApplicationVolatileRepository struct {
 	data map[string]*domain.ClientApplication
 }
 
@@ -325,8 +325,8 @@ var (
 )
 
 // In memory mock of ClientApplicationRepositoryInterface.
-func NewClientApplicationVolatileRepository() *ClientApplicationVolatileRepository {
-	return &ClientApplicationVolatileRepository{
+func NewClientApplicationVolatileRepository() *clientApplicationVolatileRepository {
+	return &clientApplicationVolatileRepository{
 		data: map[string]*domain.ClientApplication{
 			fmt.Sprintf("client_application:%s", ClientAppPush.Id):                   &ClientAppPush,
 			fmt.Sprintf("client_application:%s", ClientAppPing.Id):                   &ClientAppPing,
@@ -338,25 +338,25 @@ func NewClientApplicationVolatileRepository() *ClientApplicationVolatileReposito
 	}
 }
 
-func (c *ClientApplicationVolatileRepository) Register(clientApp *domain.ClientApplication) error {
+func (c *clientApplicationVolatileRepository) Register(clientApp *domain.ClientApplication) error {
 	key := fmt.Sprintf("client_application:%s", clientApp.Id)
 	c.data[key] = clientApp
 	return nil
 }
 
-func (c *ClientApplicationVolatileRepository) FindById(id string) (*domain.ClientApplication, error) {
+func (c *clientApplicationVolatileRepository) FindById(id string) (*domain.ClientApplication, error) {
 	key := fmt.Sprintf("client_application:%s", id)
 	clientApp, _ := c.data[key]
 	return clientApp, nil
 }
 
-type CibaSessionVolatileRepository struct {
+type cibaSessionVolatileRepository struct {
 	data map[string]*domain.CibaSession
 }
 
 // In memory mock of CibaSessionRepositoryInterface.
-func NewCibaSessionVolatileRepository() *CibaSessionVolatileRepository {
-	return &CibaSessionVolatileRepository{data: map[string]*domain.CibaSession{
+func NewCibaSessionVolatileRepository() *cibaSessionVolatileRepository {
+	return &cibaSessionVolatileRepository{data: map[string]*domain.CibaSession{
 		fmt.Sprintf("%s", CibaSession1.AuthReqId):  &CibaSession1,
 		fmt.Sprintf("%s", CibaSession2.AuthReqId):  &CibaSession2,
 		fmt.Sprintf("%s", CibaSession3.AuthReqId):  &CibaSession3,
@@ -373,30 +373,30 @@ func NewCibaSessionVolatileRepository() *CibaSessionVolatileRepository {
 	}}
 }
 
-func (c CibaSessionVolatileRepository) FindById(id string) (*domain.CibaSession, error) {
+func (c cibaSessionVolatileRepository) FindById(id string) (*domain.CibaSession, error) {
 	return c.data[id], nil
 }
 
-func (c CibaSessionVolatileRepository) Update(cibaSession *domain.CibaSession) error {
+func (c cibaSessionVolatileRepository) Update(cibaSession *domain.CibaSession) error {
 	c.data[cibaSession.AuthReqId] = cibaSession
 	return nil
 }
 
-func (c CibaSessionVolatileRepository) Create(cibaSession *domain.CibaSession) error {
+func (c cibaSessionVolatileRepository) Create(cibaSession *domain.CibaSession) error {
 	key := fmt.Sprintf("%s", cibaSession.AuthReqId)
 	c.data[key] = cibaSession
 	return nil
 }
 
-type KeyVolatileRepository struct {
+type keyVolatileRepository struct {
 	data map[string]*domain.Key
 }
 
-func NewKeyVolatileRepository() *KeyVolatileRepository {
+func NewKeyVolatileRepository() *keyVolatileRepository {
 	defer privateKeyFile.Close()
 	defer publicKeyFile.Close()
 
-	return &KeyVolatileRepository{data: map[string]*domain.Key{
+	return &keyVolatileRepository{data: map[string]*domain.Key{
 		fmt.Sprintf("%s", Key1.Id): &Key1,
 		fmt.Sprintf("%s", Key2.Id): &Key2,
 		fmt.Sprintf("%s", Key3.Id): &Key3,
@@ -406,7 +406,7 @@ func NewKeyVolatileRepository() *KeyVolatileRepository {
 	}}
 }
 
-func (k KeyVolatileRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
+func (k keyVolatileRepository) FindPrivateKeyByClientId(clientId string) (*domain.Key, error) {
 	for _, v := range k.data {
 		if v.ClientId == clientId {
 			return v, nil
@@ -415,25 +415,38 @@ func (k KeyVolatileRepository) FindPrivateKeyByClientId(clientId string) (*domai
 	return nil, nil
 }
 
-type AccessTokenVolatileRepository struct {
+type accessTokenVolatileRepository struct {
 	data map[string]*domain.AccessToken
 }
 
-func (a *AccessTokenVolatileRepository) Create(accessToken *domain.AccessToken) error {
+func (a *accessTokenVolatileRepository) Create(accessToken *domain.AccessToken) error {
 	a.data[accessToken.Value] = accessToken
 	return nil
 }
 
-func (a *AccessTokenVolatileRepository) Find(accessToken string) (*domain.AccessToken, error) {
+func (a *accessTokenVolatileRepository) Find(accessToken string) (*domain.AccessToken, error) {
 	token := a.data[accessToken]
 	return token, nil
 }
 
-func NewAccessTokenVolatileRepository() *AccessTokenVolatileRepository {
-	return &AccessTokenVolatileRepository{
+func NewAccessTokenVolatileRepository() *accessTokenVolatileRepository {
+	return &accessTokenVolatileRepository{
 		data: map[string]*domain.AccessToken{
 			AccessTokenValid.Value:   &AccessTokenValid,
 			AccessTokenExpired.Value: &AccessTokenExpired,
 		},
 	}
+}
+
+
+type userClaimVolatileRepository struct {
+
+}
+
+func (u *userClaimVolatileRepository) GetUserClaims(userId, scopes string) map[string]interface{} {
+	return map[string]interface{}{}
+}
+
+func NewUserClaimVolatileRepository() *userClaimVolatileRepository {
+	return &userClaimVolatileRepository{}
 }

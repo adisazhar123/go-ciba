@@ -37,12 +37,7 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 	tokenRequest.httpMethod = r.Method
 	tokenRequest.r = r
 
-	for _, v := range http_auth.SupportedClientAuthentications {
-		v.GetClientCredentials(r, &tokenRequest.clientId, &tokenRequest.clientSecret)
-		if tokenRequest.clientId != "" && tokenRequest.clientSecret != "" {
-			break
-		}
-	}
+	http_auth.PopulateClientCredentials(r, &tokenRequest.clientId, &tokenRequest.clientSecret)
 
 	return tokenRequest
 }
@@ -61,22 +56,24 @@ type TokenResponse struct {
 	IdToken      string  `json:"id_token"`
 }
 
-type TokenService struct {
+type tokenService struct {
 	accessTokenRepo repository.AccessTokenRepositoryInterface
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
 	keyRepo         repository.KeyRepositoryInterface
+	userClaimRepo repository.UserClaimRepositoryInterface
 	// TODO: support other grant types as well, not just CIBA.
 	grant                 *grant.CibaGrant
 	authenticationContext *http_auth.ClientAuthenticationContext
 }
 
-func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, clientAppRepo repository.ClientApplicationRepositoryInterface, cibaSessionRepo repository.CibaSessionRepositoryInterface, keyRepo repository.KeyRepositoryInterface, grant *grant.CibaGrant) *TokenService {
-	return &TokenService{
+func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, clientAppRepo repository.ClientApplicationRepositoryInterface, cibaSessionRepo repository.CibaSessionRepositoryInterface, keyRepo repository.KeyRepositoryInterface, userClaimRepo repository.UserClaimRepositoryInterface, grant *grant.CibaGrant) *tokenService {
+	return &tokenService{
 		accessTokenRepo:       accessTokenRepo,
 		clientAppRepo:         clientAppRepo,
 		cibaSessionRepo:       cibaSessionRepo,
 		keyRepo:               keyRepo,
+		userClaimRepo: userClaimRepo,
 		grant:                 grant,
 		authenticationContext: http_auth.NewClientAuthenticationContext(grant.Config),
 	}
@@ -93,7 +90,7 @@ func makeSuccessfulTokenResponse(tokens *domain.Tokens) *TokenResponse {
 }
 
 // This performs authentication on the client app
-func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcError {
+func (t *tokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcError {
 	if request.grantType != grant.IdentifierCiba {
 		return util.ErrUnsupportedGrantType
 	}
@@ -112,7 +109,7 @@ func (t *TokenService) ValidateTokenRequest(request *TokenRequest) *util.OidcErr
 	return nil
 }
 
-func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*TokenResponse, *util.OidcError) {
+func (t *tokenService) HandleTokenRequest(request *TokenRequest) (*TokenResponse, *util.OidcError) {
 	if err := t.ValidateTokenRequest(request); err != nil {
 		return nil, err
 	}
@@ -123,7 +120,7 @@ func (t *TokenService) HandleTokenRequest(request *TokenRequest) (*TokenResponse
 	return makeSuccessfulTokenResponse(tokens), nil
 }
 
-func (t *TokenService) validate(cs *domain.CibaSession) *util.OidcError {
+func (t *tokenService) validate(cs *domain.CibaSession) *util.OidcError {
 	if !cs.IsValid() || cs.IsTimeExpired() {
 		return util.ErrExpiredToken
 	} else if cs.IsAuthorizationPending() {
@@ -182,7 +179,7 @@ func waitForUserConsent(response chan UserConsentResponse, authReqId string, cib
 	}
 }
 
-func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
+func (t *tokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError) {
 	// Do some validation
 	// Check if auth_req_id exists
 	cs, err := t.cibaSessionRepo.FindById(request.authReqId)
@@ -250,8 +247,8 @@ func (t *TokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 		log.Printf("%s cannot find key for client Id %s", LogTag, request.clientId)
 		return nil, util.ErrInvalidGrant
 	}
-	// TODO: support extra claims
-	extraClaims := make(map[string]interface{})
+
+	extraClaims := t.userClaimRepo.GetUserClaims(cs.UserId, cs.Scope)
 	now := util.NowInt()
 	// TODO: support other grant types as well, not just CIBA.
 	tokens := t.grant.CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{

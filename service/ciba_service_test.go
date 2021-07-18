@@ -52,8 +52,8 @@ func (n notificationClientMock) Send(data map[string]interface{}) error {
 	return nil
 }
 
-func newCibaService() *CibaService {
-	return &CibaService{
+func newCibaService() *cibaService {
+	return &cibaService{
 		clientAppRepo:                   test_data.NewClientApplicationVolatileRepository(),
 		userAccountRepo:                 newUserAccountVolatileRepository(),
 		cibaSessionRepo:                 test_data.NewCibaSessionVolatileRepository(),
@@ -72,7 +72,7 @@ func createAuthorizationHeaderBasic(id, password string) string {
 
 // Make sure that Ciba identifier is correct.
 func TestCibaService_GetGrantIdentifier(t *testing.T) {
-	cs := &CibaService{
+	cs := &cibaService{
 		grant: grant.NewCibaGrant(),
 	}
 	id := "urn:openid:params:grant-type:ciba"

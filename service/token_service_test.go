@@ -31,11 +31,12 @@ func (a *AccessTokenVolatileRepository) Find(accessToken string) (*domain.Access
 	return nil, nil
 }
 
-func newTokenService() *TokenService {
-	return &TokenService{
+func newTokenService() *tokenService {
+	return &tokenService{
 		accessTokenRepo: newAccessTokenVolatileRepository(),
 		clientAppRepo:   test_data.NewClientApplicationVolatileRepository(),
 		cibaSessionRepo: test_data.NewCibaSessionVolatileRepository(),
+		userClaimRepo: test_data.NewUserClaimVolatileRepository(),
 		keyRepo:         test_data.NewKeyVolatileRepository(),
 		grant:           grant.NewCibaGrant(),
 	}

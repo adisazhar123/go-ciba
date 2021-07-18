@@ -25,9 +25,18 @@ const (
 	ClientSecretJwt   = "client_secret_jwt"
 )
 
-var SupportedClientAuthentications map[string]ClientAuthenticationStrategyInterface = map[string]ClientAuthenticationStrategyInterface{
+var supportedClientAuthentications map[string]ClientAuthenticationStrategyInterface = map[string]ClientAuthenticationStrategyInterface{
 	ClientSecretBasic: &httpBasic{clientCredentials: &httpClientCredentials{}},
 	ClientSecretPost:  &clientPost{},
+}
+
+func PopulateClientCredentials(r *http.Request, clientId, clientSecret *string)  {
+	for _, v := range supportedClientAuthentications {
+		v.GetClientCredentials(r, clientId, clientSecret)
+		if *clientId != "" && *clientSecret != "" {
+			break
+		}
+	}
 }
 
 func (c *ClientAuthenticationContext) AuthenticateClient(r *http.Request, ca *domain.ClientApplication) bool {
