@@ -9,26 +9,20 @@ executors:
 
 
 jobs:
-  checkout_code:
+  test:
     executor: go-executor
     steps:
       - checkout
       - restore_cache:
           keys:
-            - repo-{{ .Environment.CIRCLE_SHA1 }}
+            - go-mod-v4-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
-          command: go mod download && go mod vendor
+          command: go mod download
       - save_cache:
-          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+          key: go-mod-v4-{{ checksum "go.sum" }}
           paths:
-            - ~/repo
-  test:
-    executor: go-executor
-    steps:
-      - restore_cache:
-          keys:
-            - repo-{{ .Environment.CIRCLE_SHA1 }}
+            - /go/pkg/mod
       - run:
           name: Run tests
           command: |
@@ -39,9 +33,6 @@ jobs:
 
 workflows:
   version: 2
-  checkout_and_test:
+  build:
     jobs:
-      - checkout_code
-      - test:
-          requires:
-            - checkout_code
+      - test
