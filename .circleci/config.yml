@@ -31,9 +31,6 @@ jobs:
   after_test:
     executor: go-executor
     steps:
-      - restore_cache:
-          keys:
-            - go-mod-{{ checksum "go.sum" }}
       - run:
           name: see wd
           command: pwd
