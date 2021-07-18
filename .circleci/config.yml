@@ -18,7 +18,7 @@ jobs:
             - repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Install Dependencies
-          command: go mod download
+          command: go mod download && go mod vendor
       - save_cache:
           key: repo-{{ .Environment.CIRCLE_SHA1 }}
           paths:
