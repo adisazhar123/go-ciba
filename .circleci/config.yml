@@ -13,12 +13,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-mod-{{ checksum "go.sum" }}
+            - go-mod-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Install Dependencies
           command: go mod download
       - save_cache:
-          key: go-mod-{{ checksum "go.sum" }}
+          key: go-mod-{{ sdf }}
           paths:
             - /go/pkg/mod
             - ~/repo
@@ -32,6 +32,9 @@ jobs:
   after_test:
     executor: go-executor
     steps:
+      - restore_cache:
+          keys:
+            - go-mod-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: see wd
           command: pwd
