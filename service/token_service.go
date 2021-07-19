@@ -242,13 +242,19 @@ func (t *tokenService) GrantAccessToken(request *TokenRequest) (*domain.Tokens, 
 	}
 
 	key, err := t.keyRepo.FindPrivateKeyByClientId(request.clientId)
+	if err != nil {
+		return nil, util.ErrGeneral
+	}
 
 	if key == nil {
 		log.Printf("%s cannot find key for client Id %s", LogTag, request.clientId)
 		return nil, util.ErrInvalidGrant
 	}
 
-	extraClaims := t.userClaimRepo.GetUserClaims(cs.UserId, cs.Scope)
+	extraClaims, err := t.userClaimRepo.GetUserClaims(cs.UserId, cs.Scope)
+	if err != nil {
+		return nil, util.ErrGeneral
+	}
 	now := util.NowInt()
 	// TODO: support other grant types as well, not just CIBA.
 	tokens := t.grant.CreateAccessTokenAndIdToken(domain.DefaultCibaIdTokenClaims{

@@ -333,7 +333,11 @@ func (cs *cibaService) HandleConsentRequest(request *ConsentRequest) *util.OidcE
 		}
 
 		extraClaims["urn:openid:params:jwt:claim:auth_req_id"] = cibaSession.AuthReqId
-		claims := cs.userClaimRepo.GetUserClaims(cibaSession.UserId, cibaSession.Scope)
+		claims, err := cs.userClaimRepo.GetUserClaims(cibaSession.UserId, cibaSession.Scope)
+		if err != nil {
+			log.Println(err)
+			return util.ErrGeneral
+		}
 		for k, v := range claims {
 			extraClaims[k] = v
 		}

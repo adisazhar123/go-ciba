@@ -54,17 +54,9 @@ CREATE TABLE client_applications (
     user_code_parameter_supported BOOLEAN,
     redirect_uri VARCHAR(2000),
     token_endpoint_auth_method VARCHAR(20),
-    Token_endpoint_auth_signing_alg VARCHAR(10),
+    token_endpoint_auth_signing_alg VARCHAR(10),
     grant_types VARCHAR(255),
     public_key_uri VARCHAR(2000)
-);
-
-CREATE TABLE keys (
-    id VARCHAR(255) PRIMARY KEY,
-    client_id VARCHAR(255),
-    alg VARCHAR(10),
-    public TEXT,
-    private TEXT
 );
 
 CREATE TABLE keys (
@@ -91,6 +83,21 @@ CREATE TABLE user_accounts (
     user_code VARCHAR(255),
     created_at TIMESTAMP,
     updated_at TIMESTAMP
+);
+
+CREATE TABLE scopes (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE claims (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE scope_claims (
+    scope_id VARCHAR(255) PRIMARY KEY,
+    claim_id  VARCHAR(255)
 );
 ```
 #### Boostrap the CIBA server

@@ -235,7 +235,7 @@ func TestUserClaimSQLRepository_GetUserClaims(t *testing.T) {
 	claimsRows := sqlmock.NewRows([]string{"name"}).
 		AddRow("created_at").
 		AddRow("updated_at")
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT name FROM claims WHERE id IN (SELECT id in scope_claims WHERE scope_id = ?)")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT name FROM claims WHERE id IN (SELECT claim_id in scope_claims WHERE scope_id = ?)")).
 		WithArgs("id.timestamp.read").
 		WillReturnRows(claimsRows)
 

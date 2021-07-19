@@ -441,8 +441,8 @@ func NewAccessTokenVolatileRepository() *accessTokenVolatileRepository {
 type userClaimVolatileRepository struct {
 }
 
-func (u *userClaimVolatileRepository) GetUserClaims(userId, scopes string) map[string]interface{} {
-	return map[string]interface{}{}
+func (u *userClaimVolatileRepository) GetUserClaims(userId, scopes string) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
 }
 
 func NewUserClaimVolatileRepository() *userClaimVolatileRepository {

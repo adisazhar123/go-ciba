@@ -40,7 +40,7 @@ type UserAccountRepositoryInterface interface {
 }
 
 type UserClaimRepositoryInterface interface {
-	GetUserClaims(userId, scopes string) map[string]interface{}
+	GetUserClaims(userId, scopes string) (map[string]interface{}, error)
 }
 
 type DataStoreInterface interface {

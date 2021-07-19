@@ -13,6 +13,10 @@ type tokenServer struct {
 	service service.TokenServiceInterface
 }
 
+func NewTokenServer(service service.TokenServiceInterface) *tokenServer {
+	return &tokenServer{service: service}
+}
+
 func (t *tokenServer) HandleTokenRequest(request *service.TokenRequest) (*service.TokenResponse, *util.OidcError) {
 	return t.service.HandleTokenRequest(request)
 }

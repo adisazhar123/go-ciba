@@ -162,7 +162,7 @@ func (u *userClaimSQLRepository) GetUserClaims(userId, scopes string) (map[strin
 		}
 
 		var tempClaims []domain.Claim
-		claimsSql := u.db.Rebind(fmt.Sprintf("SELECT name FROM %s WHERE id IN (SELECT id in %s WHERE scope_id = ?)", u.tableNameClaims, u.tableNameScopeClaims))
+		claimsSql := u.db.Rebind(fmt.Sprintf("SELECT name FROM %s WHERE id IN (SELECT claim_id in %s WHERE scope_id = ?)", u.tableNameClaims, u.tableNameScopeClaims))
 
 		err = u.db.Select(&tempClaims, claimsSql, scopeId)
 		if err != nil {
@@ -192,6 +192,7 @@ type SQLDataStore struct {
 	clientApplicationRepo *clientApplicationSQLRepository
 	keyRepositoryRepo     *keySQLRepository
 	userAccountRepo       *userAccountSQLRepository
+	userClaimRepo *userClaimSQLRepository
 }
 
 func buildTableName(prefix, tableName string) string {
@@ -224,6 +225,13 @@ func NewSQLDataStore(defaultDb *sql.DB, driverName, prefix string) *SQLDataStore
 			db:        db,
 			tableName: buildTableName(prefix, "user_accounts"),
 		},
+		userClaimRepo: &userClaimSQLRepository{
+			db:                   db,
+			tableNameScopes:      buildTableName(prefix, "scopes"),
+			tableNameClaims:      buildTableName(prefix, "claims"),
+			tableNameUsers:       buildTableName(prefix, "user_accounts"),
+			tableNameScopeClaims: buildTableName(prefix, "scope_claims"),
+		},
 	}
 }
 
@@ -245,4 +253,8 @@ func (s *SQLDataStore) GetKeyRepository() KeyRepositoryInterface {
 
 func (s *SQLDataStore) GetUserAccountRepository() UserAccountRepositoryInterface {
 	return s.userAccountRepo
+}
+
+func (s *SQLDataStore) GetUserClaimRepository() UserClaimRepositoryInterface {
+	return s.userClaimRepo
 }
