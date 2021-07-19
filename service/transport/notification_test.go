@@ -27,7 +27,7 @@ const (
 func TestFirebaseCloudMessaging_Send(t *testing.T) {
 	defer gock.Off()
 	body := &fcmSendRequest{
-		To:   fmt.Sprintf("/topics/ciba_consent/%s", userId),
+		To:   fmt.Sprintf("/topics/ciba_consent_%s", userId),
 		Data: make(map[string]interface{}),
 	}
 	body.Data["auth_req_id"] = authReqId
@@ -50,7 +50,7 @@ func TestFirebaseCloudMessaging_Send(t *testing.T) {
 func TestFirebaseCloudMessaging_Send_ShouldReturnError(t *testing.T) {
 	defer gock.Off()
 	body := &fcmSendRequest{
-		To:   fmt.Sprintf("/topics/ciba_consent/%s", userId),
+		To:   fmt.Sprintf("/topics/ciba_consent_%s", userId),
 		Data: make(map[string]interface{}),
 	}
 	body.Data["auth_req_id"] = authReqId
