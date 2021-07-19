@@ -16,4 +16,3 @@ type tokenServer struct {
 func (t *tokenServer) HandleTokenRequest(request *service.TokenRequest) (*service.TokenResponse, *util.OidcError) {
 	return t.service.HandleTokenRequest(request)
 }
-

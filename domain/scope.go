@@ -5,7 +5,7 @@ type Scope struct {
 }
 
 type Claim struct {
-	Name string `db:"name"`
+	Name      string `db:"name"`
 	ScopeName string
 }
 

@@ -125,10 +125,10 @@ func (u *userAccountSQLRepository) FindById(id string) (*domain.UserAccount, err
 }
 
 type userClaimSQLRepository struct {
-	db *sqlx.DB
-	tableNameScopes string
-	tableNameClaims string
-	tableNameUsers string
+	db                   *sqlx.DB
+	tableNameScopes      string
+	tableNameClaims      string
+	tableNameUsers       string
 	tableNameScopeClaims string
 }
 
@@ -173,7 +173,6 @@ func (u *userClaimSQLRepository) GetUserClaims(userId, scopes string) (map[strin
 		}
 		claims = append(claims, tempClaims...)
 	}
-
 
 	claimsValues := make(map[string]interface{})
 

@@ -438,9 +438,7 @@ func NewAccessTokenVolatileRepository() *accessTokenVolatileRepository {
 	}
 }
 
-
 type userClaimVolatileRepository struct {
-
 }
 
 func (u *userClaimVolatileRepository) GetUserClaims(userId, scopes string) map[string]interface{} {

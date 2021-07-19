@@ -61,7 +61,7 @@ type tokenService struct {
 	clientAppRepo   repository.ClientApplicationRepositoryInterface
 	cibaSessionRepo repository.CibaSessionRepositoryInterface
 	keyRepo         repository.KeyRepositoryInterface
-	userClaimRepo repository.UserClaimRepositoryInterface
+	userClaimRepo   repository.UserClaimRepositoryInterface
 	// TODO: support other grant types as well, not just CIBA.
 	grant                 *grant.CibaGrant
 	authenticationContext *http_auth.ClientAuthenticationContext
@@ -73,7 +73,7 @@ func NewTokenService(accessTokenRepo repository.AccessTokenRepositoryInterface, 
 		clientAppRepo:         clientAppRepo,
 		cibaSessionRepo:       cibaSessionRepo,
 		keyRepo:               keyRepo,
-		userClaimRepo: userClaimRepo,
+		userClaimRepo:         userClaimRepo,
 		grant:                 grant,
 		authenticationContext: http_auth.NewClientAuthenticationContext(grant.Config),
 	}

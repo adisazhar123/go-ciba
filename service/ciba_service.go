@@ -152,7 +152,7 @@ func NewCibaService(
 		userAccountRepo:                 userAccountRepo,
 		cibaSessionRepo:                 cibaSessionRepo,
 		keyRepo:                         keyRepo,
-		userClaimRepo: userClaimRepo,
+		userClaimRepo:                   userClaimRepo,
 		scopeUtil:                       util.ScopeUtil{},
 		grant:                           cibaGrant,
 		notificationClient:              notificationClient,

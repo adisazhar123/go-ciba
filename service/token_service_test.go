@@ -36,7 +36,7 @@ func newTokenService() *tokenService {
 		accessTokenRepo: newAccessTokenVolatileRepository(),
 		clientAppRepo:   test_data.NewClientApplicationVolatileRepository(),
 		cibaSessionRepo: test_data.NewCibaSessionVolatileRepository(),
-		userClaimRepo: test_data.NewUserClaimVolatileRepository(),
+		userClaimRepo:   test_data.NewUserClaimVolatileRepository(),
 		keyRepo:         test_data.NewKeyVolatileRepository(),
 		grant:           grant.NewCibaGrant(),
 	}

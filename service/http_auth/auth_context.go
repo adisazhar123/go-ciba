@@ -30,7 +30,7 @@ var supportedClientAuthentications map[string]ClientAuthenticationStrategyInterf
 	ClientSecretPost:  &clientPost{},
 }
 
-func PopulateClientCredentials(r *http.Request, clientId, clientSecret *string)  {
+func PopulateClientCredentials(r *http.Request, clientId, clientSecret *string) {
 	for _, v := range supportedClientAuthentications {
 		v.GetClientCredentials(r, clientId, clientSecret)
 		if *clientId != "" && *clientSecret != "" {
