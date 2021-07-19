@@ -192,7 +192,7 @@ type SQLDataStore struct {
 	clientApplicationRepo *clientApplicationSQLRepository
 	keyRepositoryRepo     *keySQLRepository
 	userAccountRepo       *userAccountSQLRepository
-	userClaimRepo *userClaimSQLRepository
+	userClaimRepo         *userClaimSQLRepository
 }
 
 func buildTableName(prefix, tableName string) string {

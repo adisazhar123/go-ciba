@@ -45,7 +45,7 @@ func NewTokenRequest(r *http.Request) *TokenRequest {
 type TokenServiceInterface interface {
 	HandleTokenRequest(request *TokenRequest) (*TokenResponse, *util.OidcError)
 	GrantAccessToken(request *TokenRequest) (*domain.Tokens, *util.OidcError)
-	ValidateTokenRequest(request *TokenRequest) (*domain.Tokens, *util.OidcError)
+	ValidateTokenRequest(request *TokenRequest) *util.OidcError
 }
 
 type TokenResponse struct {
