@@ -162,7 +162,7 @@ func (u *userClaimSQLRepository) GetUserClaims(userId, scopes string) (map[strin
 		}
 
 		var tempClaims []domain.Claim
-		claimsSql := u.db.Rebind(fmt.Sprintf("SELECT name FROM %s WHERE id IN (SELECT claim_id in %s WHERE scope_id = ?)", u.tableNameClaims, u.tableNameScopeClaims))
+		claimsSql := u.db.Rebind(fmt.Sprintf("SELECT name FROM %s WHERE id IN (SELECT claim_id FROM %s WHERE scope_id = ?)", u.tableNameClaims, u.tableNameScopeClaims))
 
 		err = u.db.Select(&tempClaims, claimsSql, scopeId)
 		if err != nil {
