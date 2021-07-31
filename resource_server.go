@@ -39,6 +39,13 @@ type resourceServer struct {
 	scopeUtil       util.ScopeUtil
 }
 
+func NewResourceServer(accessTokenRepo repository.AccessTokenRepositoryInterface) *resourceServer {
+	return &resourceServer{
+		accessTokenRepo: accessTokenRepo,
+		scopeUtil: util.ScopeUtil{},
+	}
+}
+
 func (rs *resourceServer) HandleResourceRequest(r *ResourceRequest, scope string) *util.OidcError {
 	token, err := rs.accessTokenRepo.Find(r.accessToken)
 	if err != nil {
