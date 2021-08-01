@@ -9,6 +9,8 @@ executors:
 jobs:
   test:
     executor: go-executor
+    environment:
+      CODECOV_TOKEN: 5bc24268-4d94-47fc-81ee-5027ed7df4e9
     steps:
       - checkout
       - restore_cache:
@@ -25,7 +27,9 @@ jobs:
           name: Run tests
           command: |
             mkdir -p /tmp/test-reports
-            gotestsum --junitfile /tmp/test-reports/unit-tests.xml
+            go test -race -coverprofile=/tmp/test-reports/coverage.txt -covermode=atomic ./...
+            cd /tmp/test-reports
+            bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: /tmp/test-reports
 
