@@ -29,7 +29,8 @@ jobs:
             mkdir -p /tmp/test-reports
             go test -race -coverprofile=/tmp/test-reports/coverage.txt -covermode=atomic ./...
             cd /tmp/test-reports
-            bash <(curl -s https://codecov.io/bash)
+            curl -s https://codecov.io/bash -o codecov
+            bash codecov -f /tmp/test-reports/coverage.txt            
       - store_test_results:
           path: /tmp/test-reports
 
