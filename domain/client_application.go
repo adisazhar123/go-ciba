@@ -14,20 +14,20 @@ const (
 )
 
 type ClientApplication struct {
-	Id                              string `db:"id"`
-	Secret                          string `db:"secret"`
-	Name                            string `db:"name"`
-	Scope                           string `db:"scope"`
-	TokenMode                       string `db:"token_mode"`
-	ClientNotificationEndpoint      string `db:"client_notification_endpoint"`
-	AuthenticationRequestSigningAlg string `db:"authentication_request_signing_alg"`
-	UserCodeParameterSupported      bool   `db:"user_code_parameter_supported"`
+	Id                              string `db:"id" json:"id"`
+	Secret                          string `db:"secret" json:"secret"`
+	Name                            string `db:"name" json:"name"`
+	Scope                           string `db:"scope" json:"scope"`
+	TokenMode                       string `db:"token_mode" json:"token_mode"`
+	ClientNotificationEndpoint      string `db:"client_notification_endpoint" json:"client_notification_endpoint"`
+	AuthenticationRequestSigningAlg string `db:"authentication_request_signing_alg" json:"authentication_request_signing_alg"`
+	UserCodeParameterSupported      bool   `db:"user_code_parameter_supported" json:"user_code_parameter_supported"`
 
-	RedirectUri                 string `db:"redirect_uri"`
-	TokenEndpointAuthMethod     string `db:"token_endpoint_auth_method"`
-	TokenEndpointAuthSigningAlg string `db:"token_endpoint_auth_signing_alg"`
-	GrantTypes                  string `db:"grant_types"`
-	PublicKeyUri                string `db:"public_key_uri"`
+	RedirectUri                 string `db:"redirect_uri" json:"redirect_uri"`
+	TokenEndpointAuthMethod     string `db:"token_endpoint_auth_method" json:"token_endpoint_auth_method"`
+	TokenEndpointAuthSigningAlg string `db:"token_endpoint_auth_signing_alg" json:"token_endpoint_auth_signing_alg"`
+	GrantTypes                  string `db:"grant_types" json:"grant_types"`
+	PublicKeyUri                string `db:"public_key_uri" json:"public_key_uri"`
 }
 
 func NewClientApplication(name, scope, tokenMode, clientNotificationEndpoint, authenticationRequestSigningAlg string, userCode bool) *ClientApplication {

@@ -9,18 +9,25 @@ import (
 	"github.com/adisazhar123/go-ciba/grant"
 	"github.com/adisazhar123/go-ciba/test_data"
 	"github.com/alicebob/miniredis"
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 )
 
 func newTestRedis() *miniredis.Miniredis {
-	redis, _ := miniredis.Run()
-	return redis
+	miniRedis, _ := miniredis.Run()
+	return miniRedis
+}
+
+func newRedisClient(addr string) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:               addr,
+	})
 }
 
 func TestClientApplicationRedisRepository_Register(t *testing.T) {
-	redis := newTestRedis()
+	miniRedis := newTestRedis()
 
-	repo := NewClientApplicationRedisRepository(redis.Addr())
+	repo := NewClientApplicationRedisRepository(newRedisClient(miniRedis.Addr()))
 	name := "test-app"
 	scope := "openid profile email"
 	tokenMode := "ping"
@@ -29,20 +36,36 @@ func TestClientApplicationRedisRepository_Register(t *testing.T) {
 	userCode := false
 
 	newClientApp := domain.NewClientApplication(name, scope, tokenMode, endpoint, alg, userCode)
+	marshalled, _ := newClientApp.MarshalBinary()
+
 	err := repo.Register(newClientApp)
 
-	assert.Empty(t, err)
-	assert.Equal(t, newClientApp.GetName(), name)
-	assert.Equal(t, newClientApp.GetScope(), scope)
-	assert.Equal(t, newClientApp.GetTokenMode(), tokenMode)
-	assert.Equal(t, newClientApp.GetClientNotificationEndpoint(), endpoint)
-	assert.Equal(t, newClientApp.GetAuthenticationRequestSigningAlg(), alg)
-	assert.Equal(t, newClientApp.GetUserCodeParameterSupported(), userCode)
+	miniRedis.CheckGet(t, "client_application:"+newClientApp.Id, string(marshalled))
+	assert.NoError(t, err)
+}
+
+func TestClientApplicationRedisRepository_FindById(t *testing.T) {
+	miniRedis := newTestRedis()
+	repo := NewClientApplicationRedisRepository(newRedisClient(miniRedis.Addr()))
+	name := "test-app"
+	scope := "openid profile email"
+	tokenMode := "ping"
+	endpoint := "https://adisazhar.com/notification"
+	alg := "RS256"
+	userCode := false
+	newClientApp := domain.NewClientApplication(name, scope, tokenMode, endpoint, alg, userCode)
+	jsonString, _ := newClientApp.MarshalBinary()
+	miniRedis.Set("client_application:"+newClientApp.Id, string(jsonString))
+
+	clientApp, err := repo.FindById(newClientApp.Id)
+
+	assert.NotNil(t, clientApp)
+	assert.NoError(t, err)
 }
 
 func TestCibaSessionRedisRepository_Create(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewCibaSessionRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(newRedisClient(miniRedis.Addr()))
 	hint := "some-hint-user-id"
 	bindingMessage := "bind-123"
 	token := "someToken-8943dfgdfgdfg5"
@@ -62,22 +85,18 @@ func TestCibaSessionRedisRepository_Create(t *testing.T) {
 		TokenEndpointAuthMethod:         "client_secret_basic",
 		GrantTypes:                      fmt.Sprintf("%s", grant.IdentifierCiba),
 	}
-
 	newCibaSession := domain.NewCibaSession(&ca, hint, bindingMessage, token, scope, expiresIn, &interval)
+	marshalled, _ := newCibaSession.MarshalBinary()
+
 	err := repo.Create(newCibaSession)
 
-	assert.Empty(t, err)
-	assert.Equal(t, newCibaSession.Hint, hint)
-	assert.Equal(t, newCibaSession.BindingMessage, bindingMessage)
-	assert.Equal(t, newCibaSession.ClientNotificationToken, token)
-	assert.Equal(t, newCibaSession.Scope, scope)
-	assert.Equal(t, newCibaSession.ExpiresIn, expiresIn)
-	assert.Equal(t, *newCibaSession.Interval, interval)
+	miniRedis.CheckGet(t, "ciba_session:"+newCibaSession.AuthReqId, string(marshalled))
+	assert.NoError(t, err)
 }
 
 func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewUserAccountRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewUserAccountRedisRepository(newRedisClient(miniRedis.Addr()))
 	userId := "23246440-92d9-4738-8faf-551d24a1c4a4"
 	user := &domain.UserAccount{
 		Id:        "23246440-92d9-4738-8faf-551d24a1c4a4",
@@ -89,7 +108,7 @@ func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 	jsonString, _ := user.MarshalBinary()
-	redis.Set("user_account:"+userId, string(jsonString))
+	miniRedis.Set("user_account:"+userId, string(jsonString))
 
 	foundUser, err := repo.FindById(userId)
 
@@ -98,8 +117,8 @@ func TestUserAccountRedisRepository_FindById_ValidUser(t *testing.T) {
 }
 
 func TestUserAccountRedisRepository_FindById_InvalidUser(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewUserAccountRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewUserAccountRedisRepository(newRedisClient(miniRedis.Addr()))
 	invalidUserId := "invalid"
 	user := &domain.UserAccount{
 		Id:        "23246440-92d9-4738-8faf-551d24a1c4a4",
@@ -111,31 +130,32 @@ func TestUserAccountRedisRepository_FindById_InvalidUser(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 	jsonString, _ := user.MarshalBinary()
-	redis.Set("user_account:"+user.Id, string(jsonString))
+	miniRedis.Set("user_account:"+user.Id, string(jsonString))
 
 	foundUser, err := repo.FindById(invalidUserId)
 
-	assert.Empty(t, foundUser)
-	assert.NotNil(t, err)
+	assert.Nil(t, foundUser)
+	assert.NoError(t, err)
 }
 
-func TestCibaSessionRedisRepository_FindById_ShouldReturnError_WhenNotFound(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewCibaSessionRedisRepository(redis.Addr())
+func TestCibaSessionRedisRepository_FindById_ShouldReturnNil_WhenNotFound(t *testing.T) {
+	miniRedis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(newRedisClient(miniRedis.Addr()))
 	invalidSessionId := "invalid"
 	bytes, _ := test_data.CibaSession1.MarshalBinary()
-	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
+	miniRedis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
 
-	_, err := repo.FindById(invalidSessionId)
+	ciba, err := repo.FindById(invalidSessionId)
 
-	assert.EqualError(t, err, "ciba session not found")
+	assert.Nil(t, ciba)
+	assert.NoError(t, err)
 }
 
 func TestCibaSessionRedisRepository_FindById_ShouldReturnCibaSession(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewCibaSessionRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(newRedisClient(miniRedis.Addr()))
 	bytes, _ := test_data.CibaSession1.MarshalBinary()
-	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
+	miniRedis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
 
 	cs, err := repo.FindById(test_data.CibaSession1.AuthReqId)
 
@@ -144,26 +164,68 @@ func TestCibaSessionRedisRepository_FindById_ShouldReturnCibaSession(t *testing.
 }
 
 func TestCibaSessionRedisRepository_Update(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewCibaSessionRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewCibaSessionRedisRepository(newRedisClient(miniRedis.Addr()))
+	cs := test_data.CibaSession1
 	bytes, _ := test_data.CibaSession1.MarshalBinary()
-	redis.Set("ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
 
-	err := repo.Update(&domain.CibaSession{
-		AuthReqId: test_data.CibaSession1.AuthReqId,
-	})
+	err := repo.Update(&cs)
 
+	miniRedis.CheckGet(t, "ciba_session:"+test_data.CibaSession1.AuthReqId, string(bytes))
 	assert.Nil(t, err)
 }
 
 func TestKeyRedisRepository_FindPrivateKeyByClientId(t *testing.T) {
-	redis := newTestRedis()
-	repo := NewKeyRedisRepository(redis.Addr())
+	miniRedis := newTestRedis()
+	repo := NewKeyRedisRepository(newRedisClient(miniRedis.Addr()))
 	bytes, _ := test_data.Key1.MarshalBinary()
-	redis.Set("oauth_key:"+test_data.Key1.ClientId, string(bytes))
+	miniRedis.Set("oauth_key:"+test_data.Key1.ClientId, string(bytes))
 
 	key, err := repo.FindPrivateKeyByClientId(test_data.Key1.ClientId)
 
 	assert.Nil(t, err)
 	assert.Equal(t, test_data.Key1, *key)
+}
+
+func TestAccessTokenRedisRepository_Create(t *testing.T) {
+	miniRedis := newTestRedis()
+	repo := NewAccessTokenRedisRepository(newRedisClient(miniRedis.Addr()))
+	accessToken := domain.NewAccessToken("1-1-1-1", "2-2-2-2", "3-3-3-3", "openid address", time.Now().UTC().Add(1 * time.Hour))
+	marshalled, _ := accessToken.MarshalBinary()
+
+	err := repo.Create(accessToken)
+
+	miniRedis.CheckGet(t, "access_token:"+accessToken.Value, string(marshalled))
+	assert.NoError(t, err)
+}
+
+func TestAccessTokenRedisRepository_Find(t *testing.T) {
+	miniRedis := newTestRedis()
+	repo := NewAccessTokenRedisRepository(newRedisClient(miniRedis.Addr()))
+	accessToken := domain.NewAccessToken("1-1-1-1", "2-2-2-2", "3-3-3-3", "openid address", time.Now().UTC().Add(1 * time.Hour))
+	marshalled, _ := accessToken.MarshalBinary()
+	miniRedis.Set("access_token:"+accessToken.Value, string(marshalled))
+
+	at, err := repo.Find(accessToken.Value)
+
+	assert.NotNil(t, at)
+	assert.NoError(t, err)
+}
+
+func TestUserClaimRedisRepository_GetUserClaims(t *testing.T) {
+	miniRedis := newTestRedis()
+	repo := NewUserClaimRedisRepository(newRedisClient(miniRedis.Addr()))
+	userAccount := test_data.User1
+	marshalled, _ := userAccount.MarshalBinary()
+	miniRedis.Set("user_account:"+userAccount.Id, string(marshalled))
+	miniRedis.Lpush("scope:openid", "id")
+
+
+	claims, err := repo.GetUserClaims(userAccount.Id, "openid address")
+
+	miniRedis.CheckList(t, "scope:openid", "id")
+	miniRedis.CheckGet(t, "user_account:"+userAccount.Id, string(marshalled))
+	assert.NotNil(t, claims)
+	assert.NoError(t, err)
+	assert.Contains(t, claims, "id")
 }

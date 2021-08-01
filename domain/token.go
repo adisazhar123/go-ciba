@@ -52,11 +52,11 @@ type DefaultCibaIdTokenClaims struct {
 }
 
 type AccessToken struct {
-	Value    string    `db:"access_token"`
-	ClientId string    `db:"client_id"`
-	Expires  time.Time `db:"expires"`
-	UserId   string    `db:"user_id"`
-	Scope    string    `db:"scope"`
+	Value    string    `db:"access_token" json:"access_token"`
+	ClientId string    `db:"client_id" json:"client_id"`
+	Expires  time.Time `db:"expires" json:"expires"`
+	UserId   string    `db:"user_id" json:"user_id"`
+	Scope    string    `db:"scope" json:"scope"`
 }
 
 func (at *AccessToken) MarshalBinary() ([]byte, error) {
@@ -64,7 +64,7 @@ func (at *AccessToken) MarshalBinary() ([]byte, error) {
 }
 
 func (at *AccessToken) UnmarshalBinary(data []byte) error {
-	if err := json.Unmarshal(data, &data); err != nil {
+	if err := json.Unmarshal(data, at); err != nil {
 		return err
 	}
 
