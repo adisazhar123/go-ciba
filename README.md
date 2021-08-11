@@ -21,7 +21,7 @@ The following instructions will provide you to get this library up and running.
 
 #### Initialize your project
 
-You can see [this project](https://github.com/adisazhar123/go-ciba-demo/settings) for a working demo.
+You can see [this project](https://github.com/adisazhar123/go-ciba-demo) for a working demo.
 
 #### Define your schema
 The `go-ciba` library is storage agnostic which means that it's not tied to a vendor specific database. It can be plug and played with any database by implementing the interfaces in `repository/repo.go`. 
