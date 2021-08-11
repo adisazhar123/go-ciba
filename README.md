@@ -15,6 +15,11 @@ Please feel free to use this for studying purposes.
 * Go 1.14 or newer
 * Firebase Cloud Messaging
 
+### Include in your project
+```shell
+go get github.com/adisazhar123/go-ciba
+```
+
 ### Step-By-Step Walkthrough
 
 The following instructions will provide you to get this library up and running.
