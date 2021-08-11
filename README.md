@@ -2,7 +2,6 @@
 
 [![adisazhar123](https://circleci.com/gh/adisazhar123/go-ciba/tree/development.svg?style=svg&circle-token=7ce9bd81b2ad605ae129d574f18fe39aee783bab)](https://app.circleci.com/pipelines/github/adisazhar123/go-ciba?branch=development)
 
-[![codecov](https://codecov.io/gh/adisazhar123/go-ciba/branch/development/graph/badge.svg?token=D9648NK5HO)](https://codecov.io/gh/adisazhar123/go-ciba)
 ## Description
 
 `go-ciba` is a server side Software Development Kit (SDK) which attempts to implement the [OpenID Connect Client-Initiated Backchannel Authentication Flow - Core 1.0](https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html). This is merely a proof of concept and should not be relied upon in production.
