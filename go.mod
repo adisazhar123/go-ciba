@@ -13,7 +13,7 @@ require (
 	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e // indirect
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	gopkg.in/h2non/gock.v1 v1.0.16
 	gopkg.in/square/go-jose.v2 v2.5.1
 )
